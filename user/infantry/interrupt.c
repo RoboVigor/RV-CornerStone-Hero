@@ -5,7 +5,7 @@
 #include "handle.h"
 // EXTI9_5 陀螺仪中断
 void EXTI9_5_IRQHandler(void) {
-    uint8_t suc;
+    uint8_t    suc;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (EXTI_GetITStatus(EXTI_Line8) != RESET) {
         EXTI_ClearFlag(EXTI_Line8);
@@ -29,7 +29,7 @@ void USART1_IRQHandler(void) {
 
     // 数据量正确
     if (DMA_Get_Stream(USART1_Rx)->NDTR == DBUS_BACK_LENGTH) {
-        DBus_Update(&remoteData, &keyboardData, &mouseData, remoteBuffer); //解码
+        DBus_Update(&remoteData, &keyboardData, &mouseData, remoteBuffer); // 解码
     }
 
     // enable DMA
@@ -38,10 +38,25 @@ void USART1_IRQHandler(void) {
 
 /**
  * @brief USART3 串口中断
- * @note  视觉系统读取
  */
 void USART3_IRQHandler(void) {
-    Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 3);
+    uint8_t UARTtemp;
+
+    UARTtemp = USART3->SR;
+    UARTtemp = USART3->DR;
+
+    DMA_Cmd(DMA1_Stream1, DISABLE);
+
+    // disabe DMA
+    DMA_Disable(USART3_Rx);
+
+    // 数据量正确
+    if (DMA_Get_Stream(USART3_Rx)->NDTR == VT3_Remote_BACK_LENGTH) {
+        VT13_Remote_Update(&VT13remoteData, &keyboardData, &mouseData, VT13remoteBuffer); // 解码
+    }
+
+    // enable DMA
+    DMA_Enable(USART3_Rx, VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH);
 }
 
 /**
@@ -49,7 +64,7 @@ void USART3_IRQHandler(void) {
  * @note  裁判系统读取
  */
 void USART6_IRQHandler(void) {
-        Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 6);
+    Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 6);
 }
 
 /**
@@ -63,7 +78,7 @@ void UART7_IRQHandler(void) {
  * @brief UART8 串口中断
  */
 void UART8_IRQHandler(void) {
-   Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 8);
+    Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 8);
 }
 
 // CAN1数据接收中断服务函数
@@ -103,30 +118,9 @@ void NMI_Handler(void) {
  * @param  None
  * @return None
  */
-void hardfault_c(uint32_t *sp);
-	
-__ASM void HardFault_Handler(void)
-{
-		IMPORT hardfault_c;
-	
-    TST     LR, #4
-    ITE     EQ
-    MRSEQ   R0, MSP
-    MRSNE   R0, PSP
-    B       hardfault_c
-}
-
-void hardfault_c(uint32_t *sp)
-{
-    volatile uint32_t pc  = sp[6];
-    volatile uint32_t lr  = sp[5];
-    volatile uint32_t cfsr  = SCB->CFSR;
-    volatile uint32_t hfsr  = SCB->HFSR;
-    volatile uint32_t mmfar = SCB->MMFAR;
-    volatile uint32_t bfar  = SCB->BFAR;
-
-    __BKPT(0);
-    while (1) {}
+void HardFault_Handler(void) {
+    while (1) {
+    }
 }
 
 /**
@@ -135,7 +129,7 @@ void hardfault_c(uint32_t *sp)
  * @return None
  */
 void MemManage_Handler(void) {
-     while (1) {
+    while (1) {
     }
 }
 
@@ -145,7 +139,7 @@ void MemManage_Handler(void) {
  * @return None
  */
 void BusFault_Handler(void) {
-   while (1) {
+    while (1) {
     }
 }
 

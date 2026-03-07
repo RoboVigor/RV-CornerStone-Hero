@@ -70,7 +70,7 @@ typedef struct {
     uint16_t      GPIO_Pin_x;
     uint8_t       CCRx;
     GPIO_TypeDef *GPIOx;
-    TIM_TypeDef * TIMx;
+    TIM_TypeDef  *TIMx;
 } PWM_Type;
 
 typedef enum { Tx, Rx } trx_e;
@@ -78,7 +78,7 @@ typedef enum { Tx, Rx } trx_e;
 typedef struct {
     uint32_t            PERIPHx_BASE;
     trx_e               TRx;
-    DMA_TypeDef *       DMAx;
+    DMA_TypeDef        *DMAx;
     DMA_Stream_TypeDef *DMAx_Streamy;
     uint32_t            DMAx_Streamy_IRQn;
     uint32_t            DMA_Channel_x;
@@ -111,6 +111,7 @@ void BSP_Stone_Id_Init(uint8_t *Board_Id, uint8_t *Robot_Id);
 // SERVICE
 void BSP_CAN_Init(void);
 void BSP_DBUS_Init(uint8_t *remoteBuffer);
+void BSP_VT13_Init(uint8_t *remoteBuffer);
 void BSP_IMU_Init(void);
 void BSP_Laser_Init(void);
 void BSP_User_Power_Init(void);

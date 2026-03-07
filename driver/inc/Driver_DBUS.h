@@ -11,9 +11,13 @@
 
 // DBUS接收数据帧长度
 #define DBUS_LENGTH 18     // DBUS数据帧长
-#define DBUS_BACK_LENGTH 1 //增加一个字节保持稳定
+#define DBUS_BACK_LENGTH 1 // 增加一个字节保持稳定
 
-//所有按键对应位
+// VT13图传接收数据帧长度
+#define VT3_Remote_LENGTH 21     // DBUS数据帧长
+#define VT3_Remote_BACK_LENGTH 1 // 增加一个字节保持稳定
+
+// 所有按键对应位
 #define KEY_V 0x4000
 #define KEY_C 0x2000
 #define KEY_X 0x1000
@@ -32,7 +36,7 @@
 
 enum DBusState { DBusIdle, DBusWorking };
 
-//遥控解码数据存储结构体
+// 遥控解码数据存储结构体
 typedef struct {
     union {
         struct {
@@ -48,6 +52,28 @@ typedef struct {
     uint8_t switchLeft; // 3 value
     uint8_t switchRight;
 } Remote_Type;
+
+// VT13图传解码数据存储结构体
+typedef struct {
+    union {
+        struct {
+            int16_t rx, ry, ly, lx;
+        };
+        struct {
+            int16_t ch1, ch2, ch3, ch4;
+        };
+    };
+
+    enum DBusState state;
+
+    uint8_t gearSwitch; // 3 value
+    uint8_t buttonPause;
+    uint8_t buttonLeft;
+    uint8_t buttonRight;
+    uint8_t dial; // 11位
+    uint8_t trigger;
+
+} VT13_Remote_Type;
 
 typedef struct {
     int16_t x;
@@ -100,6 +126,14 @@ typedef struct {
  */
 
 void DBus_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t DBusBuffer[]);
+
+/**
+ * @brief VT13图传解码
+ *
+ * @param DBusData
+ */
+
+void VT13_Remote_Update(VT13_Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t DBusBuffer[]);
 
 /**
  * @brief 暂时禁用某键

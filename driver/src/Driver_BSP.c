@@ -129,7 +129,7 @@ void BSP_USART_Init(USART_TypeDef *USARTx,
                     uint8_t        GPIO_PinSourcex,
                     uint8_t        GPIO_PinSourcey,
                     uint16_t       GPIO_Pin,
-                    GPIO_TypeDef * GPIOx,
+                    GPIO_TypeDef  *GPIOx,
                     uint16_t       RCC_APBx,
                     uint32_t       RCC_APBxPeriph_USARTx,
                     uint16_t       USART_Mode,
@@ -250,6 +250,45 @@ void BSP_DBUS_Init(uint8_t *remoteBuffer) {
     DMA_Init(DMA1_Stream1, &DMA_InitStructure);
     DMA_Cmd(DMA1_Stream1, ENABLE);
 #endif
+}
+
+void BSP_VT13_Init(uint8_t *remoteBuffer) {
+    // USART
+    BSP_USART_Init(USART3,
+                   RCC_AHB1Periph_GPIOD,
+                   GPIO_AF_USART3,
+                   GPIO_PinSource8,
+                   GPIO_PinSource9,
+                   GPIO_Pin_8 | GPIO_Pin_9,
+                   GPIOD,
+                   RCC_APB1,
+                   RCC_APB1Periph_USART3,
+                   USART_Mode_Tx | USART_Mode_Rx,
+                   USART3_IRQn,
+                   8,
+                   921600,
+                   USART_IT_IDLE);
+    // DMA
+    USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
+    DMA_InitTypeDef DMA_InitStructure;
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
+    DMA_InitStructure.DMA_Channel            = DMA_Channel_4;
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&USART3->DR);
+    DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t) (remoteBuffer);
+    DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralToMemory;
+    DMA_InitStructure.DMA_BufferSize         = VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH;
+    DMA_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
+    DMA_InitStructure.DMA_MemoryInc          = DMA_MemoryInc_Enable;
+    DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
+    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+    DMA_InitStructure.DMA_Mode               = DMA_Mode_Normal;
+    DMA_InitStructure.DMA_Priority           = DMA_Priority_Medium;
+    DMA_InitStructure.DMA_FIFOMode           = DMA_FIFOMode_Disable;
+    DMA_InitStructure.DMA_FIFOThreshold      = DMA_FIFOThreshold_Full;
+    DMA_InitStructure.DMA_MemoryBurst        = DMA_MemoryBurst_Single;
+    DMA_InitStructure.DMA_PeripheralBurst    = DMA_PeripheralBurst_Single;
+    DMA_Init(DMA1_Stream1, &DMA_InitStructure);
+    DMA_Cmd(DMA1_Stream1, ENABLE);
 }
 
 /**
@@ -500,7 +539,7 @@ void BSP_IMU_Init(void) {
     SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, GPIO_PinSource8);
     EXTI_InitStructure.EXTI_Line    = EXTI_Line8;
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; //下降沿中断
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 下降沿中断
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 #endif
@@ -582,7 +621,7 @@ void BSP_IMU_Init(void) {
     SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, GPIO_PinSource4);
     EXTI_InitStructure.EXTI_Line    = EXTI_Line4;
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; //下降沿中断
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 下降沿中断
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -590,7 +629,7 @@ void BSP_IMU_Init(void) {
     SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, GPIO_PinSource5);
     EXTI_InitStructure.EXTI_Line    = EXTI_Line5;
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; //下降沿中断
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 下降沿中断
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -598,7 +637,7 @@ void BSP_IMU_Init(void) {
     SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOG, GPIO_PinSource3);
     EXTI_InitStructure.EXTI_Line    = EXTI_Line3;
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; //下降沿中断
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // 下降沿中断
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -625,8 +664,8 @@ void BSP_IMU_Init(void) {
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-    RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, ENABLE);                       //复位 SPI1
-    RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, DISABLE);                      //停止复位 SPI1
+    RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, ENABLE);                       // 复位 SPI1
+    RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, DISABLE);                      // 停止复位 SPI1
     SPI_InitStructure.SPI_Direction         = SPI_Direction_2Lines_FullDuplex; // 设置 SPI 全双工
     SPI_InitStructure.SPI_Mode              = SPI_Mode_Master;                 // 设置 SPI 工作模式:主 SPI
     SPI_InitStructure.SPI_DataSize          = SPI_DataSize_8b;                 // 设置 SPI 的数据大小: 8 位帧结构
@@ -646,11 +685,11 @@ void BSP_IMU_Init(void) {
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
     GPIO_PinAFConfig(GPIOF, GPIO_PinSource6, GPIO_AF_TIM10); // GPIOA1复用为定时器10
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6;              // GPIOA1
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;            //复用功能
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;       //速度100MHz
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;           //推挽复用输出
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;            //上拉
-    GPIO_Init(GPIOF, &GPIO_InitStructure);                   //初始化
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;            // 复用功能
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;       // 速度100MHz
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;           // 推挽复用输出
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;            // 上拉
+    GPIO_Init(GPIOF, &GPIO_InitStructure);                   // 初始化
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
     TIM_TimeBaseInitStructure.TIM_Period        = 50 - 1;
@@ -697,11 +736,11 @@ void BSP_TIM2_Init(void) {
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM2); // GPIOA1复用为定时器2
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;             // GPIOA1
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;           //复用功能
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;      //速度100MHz
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;          //推挽复用输出
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;           //上拉
-    GPIO_Init(GPIOA, &GPIO_InitStructure);                  //初始化
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;           // 复用功能
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;      // 速度100MHz
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;          // 推挽复用输出
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;           // 上拉
+    GPIO_Init(GPIOA, &GPIO_InitStructure);                  // 初始化
     // TIM
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure; // TIM 频率
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
@@ -845,7 +884,7 @@ void DMA_Disable(dma_table_index_e tableIndex) {
 void DMA_Enable(dma_table_index_e tableIndex, uint16_t length) {
     DMA_Type dma;
     dma = DMA_Table[tableIndex];
-        while (DMA_GetCmdStatus(dma.DMAx_Streamy) != DISABLE) {
+    while (DMA_GetCmdStatus(dma.DMAx_Streamy) != DISABLE) {
     }
     DMA_ClearFlag(dma.DMAx_Streamy, dma.DMA_FLAG_TCIFx | dma.DMA_FLAG_HTIFx);
     DMA_SetCurrDataCounter(dma.DMAx_Streamy, length);
@@ -959,7 +998,7 @@ PWM_Type PWM_RED, PWM_GREEN, PWM_BLUE;
 void BSP_LED_Init(void) {
 #ifdef STM32F427_437xx
     // 用户自定义LED*8
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE); //使能GPIOH时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE); // 使能GPIOH时钟
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Pin   = 0x01FE;            // GPIO_Pin_1-GPIO_Pin_8
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;     // 普通输出模式
@@ -1103,67 +1142,67 @@ void BSP_Beep_Init(void) {
     TIM_OCInitTypeDef       TIM_OCInitStructure;
 #ifdef STM32F427_437xx
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE); // TIM12时钟使能
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE); //使能GPIOH时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE); // 使能GPIOH时钟
 
     GPIO_PinAFConfig(GPIOH, GPIO_PinSource6, GPIO_AF_TIM12); // GPIOH6复用为定时器12
 
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6;        // GPIOH6
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;      //复用功能
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz; //速度100MHz
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;     //推挽复用输出
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;      //上拉
-    GPIO_Init(GPIOH, &GPIO_InitStructure);             //初始化PH6
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;      // 复用功能
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz; // 速度100MHz
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;     // 推挽复用输出
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;      // 上拉
+    GPIO_Init(GPIOH, &GPIO_InitStructure);             // 初始化PH6
 
-    TIM_TimeBaseStructure.TIM_Prescaler     = 90 - 1;             //定时器分频
-    TIM_TimeBaseStructure.TIM_CounterMode   = TIM_CounterMode_Up; //向上计数模式
-    TIM_TimeBaseStructure.TIM_Period        = 1;                  //自动重装载值
+    TIM_TimeBaseStructure.TIM_Prescaler     = 90 - 1;             // 定时器分频
+    TIM_TimeBaseStructure.TIM_CounterMode   = TIM_CounterMode_Up; // 向上计数模式
+    TIM_TimeBaseStructure.TIM_Period        = 1;                  // 自动重装载值
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 
-    TIM_TimeBaseInit(TIM12, &TIM_TimeBaseStructure); //初始化定时器12
+    TIM_TimeBaseInit(TIM12, &TIM_TimeBaseStructure); // 初始化定时器12
 
-    //初始化TIM12 Channel1 PWM模式
-    TIM_OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;        //选择定时器模式:TIM脉冲宽度调制模式2
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //比较输出使能
-    TIM_OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High;    //输出极性:TIM输出比较极性高
-    TIM_OC1Init(TIM12, &TIM_OCInitStructure);                     //根据T指定的参数初始化外设TIM12 OC1
+    // 初始化TIM12 Channel1 PWM模式
+    TIM_OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;        // 选择定时器模式:TIM脉冲宽度调制模式2
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; // 比较输出使能
+    TIM_OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High;    // 输出极性:TIM输出比较极性高
+    TIM_OC1Init(TIM12, &TIM_OCInitStructure);                     // 根据T指定的参数初始化外设TIM12 OC1
 
-    TIM_OC1PreloadConfig(TIM12, TIM_OCPreload_Enable); //使能TIM12在CCR1上的预装载寄存器
+    TIM_OC1PreloadConfig(TIM12, TIM_OCPreload_Enable); // 使能TIM12在CCR1上的预装载寄存器
 
     TIM_ARRPreloadConfig(TIM12, ENABLE); // ARPE使能
 
-    TIM_Cmd(TIM12, ENABLE); //使能TIM12
+    TIM_Cmd(TIM12, ENABLE); // 使能TIM12
 #endif
 #ifdef STM32F40_41xxx
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);  // TIM4时钟使能
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE); //使能GPIOD时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE); // 使能GPIOD时钟
 
     GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_TIM4); // GPIOD14复用为定时器4
 
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_14;       // GPIOD14
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;      //复用功能
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz; //速度100MHz
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;     //推挽复用输出
-    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;      //上拉
-    GPIO_Init(GPIOD, &GPIO_InitStructure);             //初始化PD14
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;      // 复用功能
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz; // 速度100MHz
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;     // 推挽复用输出
+    GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP;      // 上拉
+    GPIO_Init(GPIOD, &GPIO_InitStructure);             // 初始化PD14
 
-    TIM_TimeBaseStructure.TIM_Prescaler     = 90 - 1;             //定时器分频
-    TIM_TimeBaseStructure.TIM_CounterMode   = TIM_CounterMode_Up; //向上计数模式
-    TIM_TimeBaseStructure.TIM_Period        = 1;                  //自动重装载值
+    TIM_TimeBaseStructure.TIM_Prescaler     = 90 - 1;             // 定时器分频
+    TIM_TimeBaseStructure.TIM_CounterMode   = TIM_CounterMode_Up; // 向上计数模式
+    TIM_TimeBaseStructure.TIM_Period        = 1;                  // 自动重装载值
     TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 
-    TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure); //初始化定时器4
+    TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure); // 初始化定时器4
 
-    //初始化TIM4Channel3 PWM模式
-    TIM_OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;        //选择定时器模式:TIM脉冲宽度调制模式2
-    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; //比较输出使能
-    TIM_OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High;    //输出极性:TIM输出比较极性高
-    TIM_OC3Init(TIM4, &TIM_OCInitStructure);                      //根据T指定的参数初始化外设TIM4 OC3
+    // 初始化TIM4Channel3 PWM模式
+    TIM_OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;        // 选择定时器模式:TIM脉冲宽度调制模式2
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable; // 比较输出使能
+    TIM_OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High;    // 输出极性:TIM输出比较极性高
+    TIM_OC3Init(TIM4, &TIM_OCInitStructure);                      // 根据T指定的参数初始化外设TIM4 OC3
 
-    TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable); //使能TIM4在CCR3上的预装载寄存器
+    TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable); // 使能TIM4在CCR3上的预装载寄存器
 
     TIM_ARRPreloadConfig(TIM4, ENABLE); // ARPE使能
 
-    TIM_Cmd(TIM4, ENABLE); //使能TIM12
+    TIM_Cmd(TIM4, ENABLE); // 使能TIM12
 #endif
 }
 
@@ -1212,26 +1251,26 @@ uint8_t KTV_Play(Song_Type song) {
 void BSP_OLED_Init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 #ifdef STM32F427_437xx
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); //使能时钟
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;         //复用功能 SPI
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // 使能时钟
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;         // 复用功能 SPI
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3 | GPIO_Pin_4; // GPIOB4 GPIOB4
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE); //使能时钟
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;         //复用功能 SPI
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE); // 使能时钟
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;         // 复用功能 SPI
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_7; // GPIOA7
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1); //打开引脚的复用功能
+    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_SPI1); // 打开引脚的复用功能
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_SPI1);
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); //使能时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE); // 使能时钟
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;        //! 功能不复用 RST和DC应当为输出模式
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_9 | GPIO_Pin_10; // GPIOB9 GPIOB10
@@ -1239,8 +1278,8 @@ void BSP_OLED_Init(void) {
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE); //使能时钟
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;        //虚拟输入模式
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE); // 使能时钟
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;        // 虚拟输入模式
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6; // GPIOA6
     GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
@@ -1249,15 +1288,15 @@ void BSP_OLED_Init(void) {
 
     SPI_InitTypeDef SPI_InitStructure;
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE); //时钟
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE); // 时钟
     SPI_Cmd(SPI1, DISABLE);
 
-    SPI_InitStructure.SPI_Direction         = SPI_Direction_2Lines_FullDuplex; //全双工模式
-    SPI_InitStructure.SPI_Mode              = SPI_Mode_Master;                 //作为主机使用
-    SPI_InitStructure.SPI_DataSize          = SPI_DataSize_8b;                 //数据长度8
+    SPI_InitStructure.SPI_Direction         = SPI_Direction_2Lines_FullDuplex; // 全双工模式
+    SPI_InitStructure.SPI_Mode              = SPI_Mode_Master;                 // 作为主机使用
+    SPI_InitStructure.SPI_DataSize          = SPI_DataSize_8b;                 // 数据长度8
     SPI_InitStructure.SPI_CPOL              = SPI_CPOL_Low;
     SPI_InitStructure.SPI_CPHA              = SPI_CPHA_1Edge;
-    SPI_InitStructure.SPI_NSS               = SPI_NSS_Soft; //软件设置NSS功能
+    SPI_InitStructure.SPI_NSS               = SPI_NSS_Soft; // 软件设置NSS功能
     SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;
     SPI_InitStructure.SPI_FirstBit          = SPI_FirstBit_MSB;
 
@@ -1399,16 +1438,16 @@ uint8_t Is_Button_Pressed(void) {
 #endif
 }
 
-void BSP_IWDG_Init(){
+void BSP_IWDG_Init() {
 #ifdef STM32F427_437xx
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
     IWDG_SetPrescaler(IWDG_Prescaler_32);
     IWDG_SetReload(3999);
     IWDG_ReloadCounter();
     IWDG_Enable();
-#endif 
+#endif
 }
 
-void BSP_IWDG_Feed(){
+void BSP_IWDG_Feed() {
     IWDG_ReloadCounter();
 }

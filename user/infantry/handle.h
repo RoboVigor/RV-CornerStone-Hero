@@ -46,9 +46,9 @@ __HANDLE_EXT uint8_t ControlMode;
 __HANDLE_EXT uint8_t FrictEnabled, StirEnabled, MagzineOpened;
 __HANDLE_EXT uint8_t PsAimEnabled, PsShootEnabled;
 __HANDLE_EXT uint8_t SwingMode, SafetyMode, PigeonMode;
- typedef enum {normalMove = 0, fastMove = 1, frictMove = 2}moveMode_t;
- typedef enum {normalShoot = 0, fastShoot = 1, frictShoot = 2}ShootMode_t;
-__HANDLE_EXT moveMode_t moveMode;
+typedef enum { normalMove = 0, fastMove = 1, frictMove = 2 } moveMode_t;
+typedef enum { normalShoot = 0, fastShoot = 1, frictShoot = 2 } ShootMode_t;
+__HANDLE_EXT moveMode_t  moveMode;
 __HANDLE_EXT ShootMode_t ShootMode;
 
 // 上位机
@@ -65,19 +65,21 @@ __HANDLE_EXT PID_Type   PID_Cloud_YawAngle, PID_Cloud_YawSpeed, PID_Cloud_PitchA
 __HANDLE_EXT PID_Type   PID_Follow_Angle, PID_Follow_Speed;
 
 // 遥控器
-__HANDLE_EXT uint8_t       remoteBuffer[DBUS_LENGTH + DBUS_BACK_LENGTH];
-__HANDLE_EXT Remote_Type   remoteData;
-__HANDLE_EXT Keyboard_Type keyboardData;
-__HANDLE_EXT Mouse_Type    mouseData;
+__HANDLE_EXT uint8_t          remoteBuffer[DBUS_LENGTH + DBUS_BACK_LENGTH];
+__HANDLE_EXT uint8_t          VT13remoteBuffer[VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH];
+__HANDLE_EXT Remote_Type      remoteData;
+__HANDLE_EXT VT13_Remote_Type VT13remoteData;
+__HANDLE_EXT Keyboard_Type    keyboardData;
+__HANDLE_EXT Mouse_Type       mouseData;
 
 // 陀螺仪
 __HANDLE_EXT volatile ImuData_Type       ImuData;
 __HANDLE_EXT volatile GyroscopeData_Type Gyroscope_EulerData;
-__HANDLE_EXT SemaphoreHandle_t ImuDataReady;
+__HANDLE_EXT SemaphoreHandle_t           ImuDataReady;
 
 // 调试数据
 __HANDLE_EXT DebugData_Type *DebugData;
-__HANDLE_EXT VofaData_type *VofaData;
+__HANDLE_EXT VofaData_type  *VofaData;
 
 // 底盘
 __HANDLE_EXT ChassisData_Type ChassisData;
@@ -91,7 +93,7 @@ __HANDLE_EXT Node_Type         Node_Judge, Node_Host, Node_Board, Node_SuperCap,
 // 弹舱盖舵机
 __HANDLE_EXT PWM_Type PWM_Magazine_Servo;
 
-//发射机构
+// 发射机构
 __HANDLE_EXT Motor_Type Motor_Stir, Motor_FL, Motor_FR;                     // 左/右 摩擦轮 拨弹轮 电机
 __HANDLE_EXT PID_Type   PID_StirSpeed, PID_StirAngle, PID_FireL, PID_FireR; // 拨弹轮 速度/角度 PID
 

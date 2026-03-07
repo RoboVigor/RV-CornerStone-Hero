@@ -61,6 +61,35 @@ void DBus_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint
     }
 }
 
+void VT13_Remote_Update(VT13_Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t DBusBuffer[]) {
+    remote->state = DBusWorking;
+
+    remote->ch1 = (DBusBuffer[2] | DBusBuffer[3] << 8) & 0x07FF;
+    remote->ch1 -= 1024;
+    remote->ch2 = (DBusBuffer[3] >> 3 | DBusBuffer[4] << 5) & 0x07FF;
+    remote->ch2 -= 1024;
+    remote->ch3 = (DBusBuffer[4] >> 6 | DBusBuffer[5] << 2 | DBusBuffer[6] << 10) & 0x07FF;
+    remote->ch3 -= 1024;
+    remote->ch4 = (DBusBuffer[6] >> 1 | DBusBuffer[7] << 7) & 0x07FF;
+    remote->ch4 -= 1024;
+
+    remote->gearSwitch  = DBusBuffer[7] & 0x30;
+    remote->buttonPause = DBusBuffer[7] & 0x40;
+    remote->buttonLeft  = DBusBuffer[7] & 0x80;
+    remote->buttonRight = DBusBuffer[8] & 0x01;
+    remote->dial        = (DBusBuffer[8] >> 1 | DBusBuffer[9] << 7) & 0x7ff;
+    remote->trigger     = DBusBuffer[9] & 0x10;
+
+    mouse->x = DBusBuffer[10] | (DBusBuffer[11] << 8);
+    mouse->y = DBusBuffer[12] | (DBusBuffer[13] << 8);
+    mouse->z = DBusBuffer[14] | (DBusBuffer[15] << 8);
+
+    mouse->pressLeft  = DBusBuffer[16] & 0x03;
+    mouse->pressRight = DBusBuffer[16] & 0x0C;
+
+    kb->keyCode = (DBusBuffer[17] | DBusBuffer[18] << 8);
+}
+
 void Key_Disable(Keyboard_Type *kb, uint16_t key, uint16_t duration) {
     kb->keyDisabledCounter[FastLog2(key)] = duration;
 }
