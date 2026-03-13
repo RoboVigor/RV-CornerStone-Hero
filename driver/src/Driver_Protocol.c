@@ -39,8 +39,8 @@ void Protocol_Init(Node_Type *node, ProtocolData_Type *protocolData) {
 int16_t Protocol_Pack(Node_Type *node, uint16_t id) {
     ProtocolInfo_Type *protocolInfo;
     uint16_t           dataLength, offset, dataCRC16, i = 0, index = 0, packetId = id, dataId = id;
-    uint8_t *          begin_p;
-    uint8_t *          send_p;
+    uint8_t           *begin_p;
+    uint8_t           *send_p;
 
     node->state = STATE_WORK;
 
@@ -64,7 +64,7 @@ int16_t Protocol_Pack(Node_Type *node, uint16_t id) {
     node->sendBuf[index++] = PROTOCOL_HEADER;
 
     // Data Length
-    node->sendBuf[index++] = (dataLength) &0xff;
+    node->sendBuf[index++] = (dataLength) & 0xff;
     node->sendBuf[index++] = (dataLength) >> 8;
 
     // Frame SEQ
@@ -76,7 +76,7 @@ int16_t Protocol_Pack(Node_Type *node, uint16_t id) {
     }
 
     // Cmd ID
-    node->sendBuf[index++] = (packetId) &0xff;
+    node->sendBuf[index++] = (packetId) & 0xff;
     node->sendBuf[index++] = (packetId) >> 8;
 
     // Clear
@@ -92,7 +92,7 @@ int16_t Protocol_Pack(Node_Type *node, uint16_t id) {
 
     // Data CRC16
     dataCRC16              = Get_CRC16_Check_Sum(node->sendBuf, PROTOCOL_HEADER_CMDID_LEN + dataLength);
-    node->sendBuf[index++] = (dataCRC16) &0xff;
+    node->sendBuf[index++] = (dataCRC16) & 0xff;
     node->sendBuf[index++] = (dataCRC16) >> 8;
 
     send_p = node->sendBuf;
@@ -227,3 +227,4 @@ void Protocol_Unpack(Node_Type *node, uint8_t byte) {
     } break;
     }
 }
+

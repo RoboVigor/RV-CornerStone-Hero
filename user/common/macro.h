@@ -13,13 +13,31 @@
 #define DPS2RPS 0.01745329f // 3.1415926f / 180.0f,    degree/s ->rad/s
 #define RPS2DPS 57.2957804f // 180.0f / 3.1415926f,    rad/s    ->degree/s
 
+// 控制方式
+// define CONTROLLED_BY_DBUS
+
+#ifdef CONTROLLED_BY_DBUS
+#define REMOTE_BAUD_RATE  100000
+#else
+#define REMOTE_BAUD_RATE  921600
+#endif
+
 // 遥控器开关
+#ifdef CONTROLLED_BY_DBUS
 #define LEFT_SWITCH_TOP     (remoteData.switchLeft == 1)
 #define LEFT_SWITCH_MIDDLE  (remoteData.switchLeft == 3)
 #define LEFT_SWITCH_BOTTOM  (remoteData.switchLeft == 2)
 #define RIGHT_SWITCH_TOP    (remoteData.switchRight == 1)
 #define RIGHT_SWITCH_MIDDLE (remoteData.switchRight == 3)
 #define RIGHT_SWITCH_BOTTOM (remoteData.switchRight == 2)
+#else
+#define LEFT_SWITCH_TOP     0
+#define LEFT_SWITCH_MIDDLE  0
+#define LEFT_SWITCH_BOTTOM  0
+#define RIGHT_SWITCH_TOP    0
+#define RIGHT_SWITCH_MIDDLE 0
+#define RIGHT_SWITCH_BOTTOM 0
+#endif
 
 // 数值运算
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
@@ -31,11 +49,13 @@
 #define LASER_ON GPIO_SetBits(GPIOG, GPIO_Pin_13) // 激光开启
 #define LASER_OFF GPIO_ResetBits(GPIOG, GPIO_Pin_13) // 激光关闭
 #define LASER_TOGGLE GPIO_ToggleBits(GPIOG, GPIO_Pin_13) // 激光闪烁
+
 #endif
 #ifdef STM32F40_41xxx
 #define LASER_ON GPIO_SetBits(GPIOC, GPIO_Pin_8) // 激光开启
 #define LASER_OFF GPIO_ResetBits(GPIOC, GPIO_Pin_8) // 激光关闭
 #define LASER_TOGGLE GPIO_ToggleBits(GPIOC, GPIO_Pin_8) // 激光闪烁
+
 #endif
 
 // 好看
@@ -77,7 +97,7 @@
 /**
  * @brief get relative system time
  */
-#define getSysTimeNs() (1e9 * ulHighFrequencyTimerTicks / 25000.0f) 
+#define getSysTimeNs() (1e9 * ulHighFrequencyTimerTicks / 25000.0f)
 #define getSysTimeUs() (1e6 * ulHighFrequencyTimerTicks / 25000.0f)
 #define getSysTimeMs() (1e3 * ulHighFrequencyTimerTicks / 25000.0f)
 #define getSysTimeS()  (1.0f * ulHighFrequencyTimerTicks / 25000.0f)

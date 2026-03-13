@@ -65,12 +65,10 @@ __HANDLE_EXT PID_Type   PID_Cloud_YawAngle, PID_Cloud_YawSpeed, PID_Cloud_PitchA
 __HANDLE_EXT PID_Type   PID_Follow_Angle, PID_Follow_Speed;
 
 // 遥控器
-__HANDLE_EXT uint8_t          remoteBuffer[DBUS_LENGTH + DBUS_BACK_LENGTH];
-__HANDLE_EXT uint8_t          VT13remoteBuffer[VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH];
-__HANDLE_EXT Remote_Type      remoteData;
-__HANDLE_EXT VT13_Remote_Type VT13remoteData;
-__HANDLE_EXT Keyboard_Type    keyboardData;
-__HANDLE_EXT Mouse_Type       mouseData;
+__HANDLE_EXT uint8_t       remoteBuffer[22];
+__HANDLE_EXT Remote_Type   remoteData;
+__HANDLE_EXT Keyboard_Type keyboardData;
+__HANDLE_EXT Mouse_Type    mouseData;
 
 // 陀螺仪
 __HANDLE_EXT volatile ImuData_Type       ImuData;

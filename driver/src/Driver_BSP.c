@@ -174,32 +174,19 @@ void BSP_USART_Init(USART_TypeDef *USARTx,
     }
 }
 
-void BSP_DBUS_Init(uint8_t *remoteBuffer) {
+void BSP_Remote_Init(uint8_t *remoteBuffer) {
 #ifdef STM32F427_437xx
     // USART
-    BSP_USART_Init(USART1,
-                   RCC_AHB1Periph_GPIOB,
-                   GPIO_AF_USART1,
-                   GPIO_PinSource7,
-                   GPIO_PinSource7,
-                   GPIO_Pin_7,
-                   GPIOB,
-                   RCC_APB2,
-                   RCC_APB2Periph_USART1,
-                   USART_Mode_Rx,
-                   USART1_IRQn,
-                   8,
-                   100000,
-                   USART_IT_IDLE);
+    BSP_USART_Init(USART_INIT_PARAMS);
     // DMA
-    USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+    USART_DMACmd(REMOTE_USART, USART_DMAReq_Rx, ENABLE);
     DMA_InitTypeDef DMA_InitStructure;
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
+    RCC_AHB1PeriphClockCmd(REMOTE_RCC_AHB1Periph_DMA, ENABLE);
     DMA_InitStructure.DMA_Channel            = DMA_Channel_4;
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&USART1->DR);
+    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&REMOTE_USART->DR);
     DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t) (remoteBuffer);
     DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralToMemory;
-    DMA_InitStructure.DMA_BufferSize         = DBUS_LENGTH + DBUS_BACK_LENGTH;
+    DMA_InitStructure.DMA_BufferSize         = REMOTE_LENGTH + REMOTE_BACK_LENGTH;
     DMA_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc          = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
@@ -210,8 +197,8 @@ void BSP_DBUS_Init(uint8_t *remoteBuffer) {
     DMA_InitStructure.DMA_FIFOThreshold      = DMA_FIFOThreshold_Full;
     DMA_InitStructure.DMA_MemoryBurst        = DMA_MemoryBurst_Single;
     DMA_InitStructure.DMA_PeripheralBurst    = DMA_PeripheralBurst_Single;
-    DMA_Init(DMA2_Stream2, &DMA_InitStructure);
-    DMA_Cmd(DMA2_Stream2, ENABLE);
+    DMA_Init(REMOTE_DMA_STREAM, &DMA_InitStructure);
+    DMA_Cmd(REMOTE_DMA_STREAM, ENABLE);
 #endif
 #ifdef STM32F40_41xxx
     BSP_USART_Init(USART3,
@@ -226,7 +213,7 @@ void BSP_DBUS_Init(uint8_t *remoteBuffer) {
                    USART_Mode_Rx,
                    USART3_IRQn,
                    8,
-                   100000,
+                   REMOTE_BAUD_RATE,
                    USART_IT_IDLE);
     // DMA
     USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
@@ -236,7 +223,8 @@ void BSP_DBUS_Init(uint8_t *remoteBuffer) {
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&USART3->DR);
     DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t) (remoteBuffer);
     DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralToMemory;
-    DMA_InitStructure.DMA_BufferSize         = DBUS_LENGTH + DBUS_BACK_LENGTH;
+    DMA_InitStructure.DMA_BufferSize         = REMOTE_LENGTH + REMOTE_BACK_LENGTH;
+    ;
     DMA_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
     DMA_InitStructure.DMA_MemoryInc          = DMA_MemoryInc_Enable;
     DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
@@ -250,45 +238,6 @@ void BSP_DBUS_Init(uint8_t *remoteBuffer) {
     DMA_Init(DMA1_Stream1, &DMA_InitStructure);
     DMA_Cmd(DMA1_Stream1, ENABLE);
 #endif
-}
-
-void BSP_VT13_Init(uint8_t *remoteBuffer) {
-    // USART
-    BSP_USART_Init(USART3,
-                   RCC_AHB1Periph_GPIOD,
-                   GPIO_AF_USART3,
-                   GPIO_PinSource8,
-                   GPIO_PinSource9,
-                   GPIO_Pin_8 | GPIO_Pin_9,
-                   GPIOD,
-                   RCC_APB1,
-                   RCC_APB1Periph_USART3,
-                   USART_Mode_Tx | USART_Mode_Rx,
-                   USART3_IRQn,
-                   8,
-                   921600,
-                   USART_IT_IDLE);
-    // DMA
-    USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
-    DMA_InitTypeDef DMA_InitStructure;
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
-    DMA_InitStructure.DMA_Channel            = DMA_Channel_4;
-    DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&USART3->DR);
-    DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t) (remoteBuffer);
-    DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralToMemory;
-    DMA_InitStructure.DMA_BufferSize         = VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH;
-    DMA_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
-    DMA_InitStructure.DMA_MemoryInc          = DMA_MemoryInc_Enable;
-    DMA_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
-    DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-    DMA_InitStructure.DMA_Mode               = DMA_Mode_Normal;
-    DMA_InitStructure.DMA_Priority           = DMA_Priority_Medium;
-    DMA_InitStructure.DMA_FIFOMode           = DMA_FIFOMode_Disable;
-    DMA_InitStructure.DMA_FIFOThreshold      = DMA_FIFOThreshold_Full;
-    DMA_InitStructure.DMA_MemoryBurst        = DMA_MemoryBurst_Single;
-    DMA_InitStructure.DMA_PeripheralBurst    = DMA_PeripheralBurst_Single;
-    DMA_Init(DMA1_Stream1, &DMA_InitStructure);
-    DMA_Cmd(DMA1_Stream1, ENABLE);
 }
 
 /**

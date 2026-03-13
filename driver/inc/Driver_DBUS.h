@@ -8,14 +8,41 @@
 
 #include "stm32f4xx.h"
 #include "vegmath.h"
+#include "macro.h"
 
+#ifdef CONTROLLED_BY_DBUS
 // DBUS接收数据帧长度
-#define DBUS_LENGTH 18     // DBUS数据帧长
-#define DBUS_BACK_LENGTH 1 // 增加一个字节保持稳定
+#define REMOTE_LENGTH 18     // DBUS数据帧长
+#define REMOTE_BACK_LENGTH 1 // 增加一个字节保持稳定
 
+#define REMOTE_USART USART1
+#define REMOTE_USART_RX USART1_Rx
+#define REMOTE_USART_TX USART1_Tx
+
+#define USART_INIT_PARAMS                                                                                                                                      \
+    USART1, RCC_AHB1Periph_GPIOB, GPIO_AF_USART1, GPIO_PinSource7, GPIO_PinSource7, GPIO_Pin_7, GPIOB, RCC_APB2, RCC_APB2Periph_USART1, USART_Mode_Rx,         \
+        USART1_IRQn, 8, REMOTE_BAUD_RATE, USART_IT_IDLE
+
+#define REMOTE_RCC_AHB1Periph_DMA RCC_AHB1Periph_DMA2
+#define REMOTE_DMA_STREAM DMA2_Stream2
+
+#else
 // VT13图传接收数据帧长度
-#define VT3_Remote_LENGTH 21     // DBUS数据帧长
-#define VT3_Remote_BACK_LENGTH 1 // 增加一个字节保持稳定
+#define REMOTE_LENGTH 21     // DBUS数据帧长
+#define REMOTE_BACK_LENGTH 1 // 增加一个字节保持稳定
+
+#define REMOTE_USART UART4
+#define REMOTE_USART_RX UART4_Rx
+#define REMOTE_USART_TX UART4_Tx
+
+#define USART_INIT_PARAMS                                                                                                                                      \
+    UART4, RCC_AHB1Periph_GPIOA, GPIO_AF_UART4, GPIO_PinSource1, GPIO_PinSource1, GPIO_Pin_1, GPIOA, RCC_APB1, RCC_APB1Periph_UART4, USART_Mode_Rx,            \
+        UART4_IRQn, 8, REMOTE_BAUD_RATE, USART_IT_IDLE
+
+#define REMOTE_RCC_AHB1Periph_DMA RCC_AHB1Periph_DMA1
+#define REMOTE_DMA_STREAM DMA1_Stream2
+
+#endif
 
 // 所有按键对应位
 #define KEY_V 0x4000
@@ -34,10 +61,12 @@
 #define KEY_S 0x0002
 #define KEY_W 0x0001
 
-enum DBusState { DBusIdle, DBusWorking };
+enum DBusState { RemoteIdle, RemoteWorking };
 
 // 遥控解码数据存储结构体
 typedef struct {
+#ifdef CONTROLLED_BY_DBUS
+    // 遥控解码数据存储结构体
     union {
         struct {
             int16_t rx, ry, lx, ly;
@@ -51,10 +80,9 @@ typedef struct {
 
     uint8_t switchLeft; // 3 value
     uint8_t switchRight;
-} Remote_Type;
 
-// VT13图传解码数据存储结构体
-typedef struct {
+#else
+    // VT13图传解码数据存储结构体
     union {
         struct {
             int16_t rx, ry, ly, lx;
@@ -70,10 +98,11 @@ typedef struct {
     uint8_t buttonPause;
     uint8_t buttonLeft;
     uint8_t buttonRight;
-    uint8_t dial; // 11位
+    int16_t dial; // 11位
     uint8_t trigger;
 
-} VT13_Remote_Type;
+#endif
+} Remote_Type;
 
 typedef struct {
     int16_t x;
@@ -119,21 +148,15 @@ typedef struct {
     enum DBusState state;
 } Keyboard_Type;
 
-/**
- * @brief DBUS解码
- *
- * @param DBusData
- */
-
-void DBus_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t DBusBuffer[]);
+void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse);
 
 /**
- * @brief VT13图传解码
+ * @brief 遥控器解码
  *
- * @param DBusData
+ * @param remoteData
  */
 
-void VT13_Remote_Update(VT13_Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t DBusBuffer[]);
+void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t RemoteBuffer[]);
 
 /**
  * @brief 暂时禁用某键

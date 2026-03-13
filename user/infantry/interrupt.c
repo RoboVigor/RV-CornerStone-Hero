@@ -28,35 +28,39 @@ void USART1_IRQHandler(void) {
     DMA_Disable(USART1_Rx);
 
     // 数据量正确
-    if (DMA_Get_Stream(USART1_Rx)->NDTR == DBUS_BACK_LENGTH) {
-        DBus_Update(&remoteData, &keyboardData, &mouseData, remoteBuffer); // 解码
+    if (DMA_Get_Stream(USART1_Rx)->NDTR == REMOTE_BACK_LENGTH) {
+        Remote_Update(&remoteData, &keyboardData, &mouseData, remoteBuffer); // 解码
     }
 
     // enable DMA
-    DMA_Enable(USART1_Rx, DBUS_LENGTH + DBUS_BACK_LENGTH);
+    DMA_Enable(USART1_Rx, REMOTE_LENGTH + REMOTE_BACK_LENGTH);
+} // DBus空闲中断(USART1)
+
+void UART4_IRQHandler(void) {
+    uint8_t UARTtemp;
+
+    UARTtemp = UART4->DR;
+    UARTtemp = UART4->SR;
+
+    DMA_Cmd(DMA1_Stream2, DISABLE);
+
+    // disabe DMA
+    DMA_Disable(UART4_Rx);
+
+    // 数据量正确
+    if (DMA_Get_Stream(UART4_Rx)->NDTR == REMOTE_BACK_LENGTH) {
+        Remote_Update(&remoteData, &keyboardData, &mouseData, remoteBuffer); // 解码
+    }
+
+    // enable DMA
+    DMA_Enable(UART4_Rx, REMOTE_LENGTH + REMOTE_BACK_LENGTH);
 }
 
 /**
  * @brief USART3 串口中断
  */
 void USART3_IRQHandler(void) {
-    uint8_t UARTtemp;
-
-    UARTtemp = USART3->SR;
-    UARTtemp = USART3->DR;
-
-    DMA_Cmd(DMA1_Stream1, DISABLE);
-
-    // disabe DMA
-    DMA_Disable(USART3_Rx);
-
-    // 数据量正确
-    if (DMA_Get_Stream(USART3_Rx)->NDTR == VT3_Remote_BACK_LENGTH) {
-        VT13_Remote_Update(&VT13remoteData, &keyboardData, &mouseData, VT13remoteBuffer); // 解码
-    }
-
-    // enable DMA
-    DMA_Enable(USART3_Rx, VT3_Remote_LENGTH + VT3_Remote_BACK_LENGTH);
+    Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 3);
 }
 
 /**

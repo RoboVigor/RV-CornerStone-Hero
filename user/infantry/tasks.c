@@ -55,8 +55,6 @@ void Task_Control(void *Parameters) {
             if (keyboardData.Shift) moveMode = fastMove;
         }
 
-        VofaData->debug0 = VT13remoteData.rx;
-        VofaData->debug1 = VT13remoteData.ry;
         // 调试视觉用
         // FrictEnabled   = (remoteData.switchLeft == 2) || (remoteData.switchLeft == 1) && (remoteData.switchRight != 2);
         // PsAimEnabled   = (remoteData.switchLeft == 1) && (remoteData.switchRight != 3);

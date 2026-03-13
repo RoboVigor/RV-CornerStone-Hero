@@ -36,7 +36,7 @@ int main(void) {
     Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
 
     // 遥控器数据初始化
-    DBUS_Init(&remoteData, &keyboardData, &mouseData, remoteBuffer);
+    Remote_Init(&remoteData, &keyboardData, &mouseData);
 
     // 通讯协议初始化
     Protocol_Init(&Node_Judge, &ProtocolData);
@@ -47,7 +47,6 @@ int main(void) {
 
     // 硬件配置
     BSP_CAN_Init();
-    BSP_DBUS_Init(remoteBuffer);
     BSP_TIM2_Init();
     // BSP_IMU_Init();
     BSP_Laser_Init();
@@ -59,7 +58,7 @@ int main(void) {
     BSP_Stone_Id_Init(&Board_Id, &Robot_Id);
 
     // USART
-    //BSP_UART7_Init(115200, USART_IT_IDLE);
+    BSP_UART7_Init(115200, USART_IT_IDLE);
     BSP_UART8_Init(115200, USART_IT_IDLE);
     BSP_USART6_Init(115200, USART_IT_IDLE);
 
@@ -71,6 +70,9 @@ int main(void) {
     Motor_Set_Angle_Bias(&Motor_Yaw, 0);
     Motor_Set_Angle_Bias(&Motor_Pitch, 0);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
+	
+	
+    BSP_Remote_Init(remoteBuffer);
 
     // 总线设置
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x201, &Motor_LAJI);
@@ -85,12 +87,10 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x207, &Motor_Stir);
 
     // 总线设置
-    //Bridge_Bind(&BridgeData, USART_BRIDGE, 7, &Node_Host);
+    Bridge_Bind(&BridgeData, USART_BRIDGE, 7, &Node_Host);
     Bridge_Bind(&BridgeData, USART_BRIDGE, 8, &Node_Judge);
     Bridge_Bind(&BridgeData, USART_BRIDGE, 6, &Node_Debug);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x500, &Node_SuperCap);
-	
-    BSP_VT13_Init(VT13remoteBuffer);
 
     // 陀螺仪
     // Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
