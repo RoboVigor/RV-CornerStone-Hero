@@ -1,10 +1,10 @@
 /**
- * @file Driver_DBus.h
+ * @file Driver_Remote.h
  * @brief 遥控器驱动
  */
 
-#ifndef __DRIVER_DBUS_H
-#define __DRIVER_DBUS_H
+#ifndef __Driver_Remote_H
+#define __Driver_Remote_H
 
 #include "stm32f4xx.h"
 #include "vegmath.h"
