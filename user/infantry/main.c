@@ -70,8 +70,7 @@ int main(void) {
     Motor_Set_Angle_Bias(&Motor_Yaw, 0);
     Motor_Set_Angle_Bias(&Motor_Pitch, 0);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
-	
-	
+
     BSP_Remote_Init(remoteBuffer);
 
     // 总线设置
@@ -87,7 +86,7 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x207, &Motor_Stir);
 
     // 总线设置
-    Bridge_Bind(&BridgeData, USART_BRIDGE, 7, &Node_Host);
+    // Bridge_Bind(&BridgeData, USART_BRIDGE, 7, &Node_Host);
     Bridge_Bind(&BridgeData, USART_BRIDGE, 8, &Node_Judge);
     Bridge_Bind(&BridgeData, USART_BRIDGE, 6, &Node_Debug);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x500, &Node_SuperCap);
@@ -98,6 +97,8 @@ int main(void) {
     // 绑定debug指针
     VofaData  = &(ProtocolData.debugInfo.vofaData);
     DebugData = &(ProtocolData.debugInfo.debugData);
+
+    USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 
     // 安全延时
     delay_ms(500);

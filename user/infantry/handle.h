@@ -29,6 +29,8 @@
 #include "Driver_Fsm.h"
 #include "Driver_Vofa.h"
 
+#include "usbd_cdc_if.h"
+
 #ifdef __HANDLE_GLOBALS
 #define __HANDLE_EXT
 #else
@@ -109,5 +111,10 @@ void Handle_Init(void);
 
 // 初始化事件组，用于需要各类需要先初始化的业务且刚需放置再rtos中进行，保证初始化完成才正常进入到完整控制系统中
 __HANDLE_EXT EventGroupHandle_t InitEventGroup;
+
+// OTG
+__HANDLE_EXT USB_OTG_CORE_HANDLE usbDevice;
+extern USBD_DEVICE               USR_desc;
+extern USBD_Usr_cb_TypeDef       USR_cb;
 
 #endif
