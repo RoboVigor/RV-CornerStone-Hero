@@ -162,114 +162,34 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>119</LineNumber>
+          <LineNumber>17</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134276374</Address>
+          <Address>134246440</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\user\infantry\main.c</Filename>
+          <Filename>..\driver\src\Driver_Protocol.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\Belief_exp2\../user/infantry/main.c\119</Expression>
+          <Expression>\\Belief_exp2\../driver/src/Driver_Protocol.c\17</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>107</LineNumber>
+          <LineNumber>203</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134276356</Address>
+          <Address>134247022</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\user\infantry\main.c</Filename>
+          <Filename>..\driver\src\Driver_Protocol.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\Belief_exp2\../user/infantry/main.c\107</Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>611</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134255152</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\user\infantry\tasks.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\Belief_exp2\../user/infantry/tasks.c\611</Expression>
-        </Bp>
-        <Bp>
-          <Number>3</Number>
-          <Type>0</Type>
-          <LineNumber>74</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134251220</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\user\infantry\tasks.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\Belief_exp2\../user/infantry/tasks.c\74</Expression>
-        </Bp>
-        <Bp>
-          <Number>4</Number>
-          <Type>0</Type>
-          <LineNumber>39</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\user\infantry\main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>5</Number>
-          <Type>0</Type>
-          <LineNumber>106</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\user\infantry\main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>6</Number>
-          <Type>0</Type>
-          <LineNumber>118</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\user\infantry\main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <Expression>\\Belief_exp2\../driver/src/Driver_Protocol.c\203</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -378,6 +298,16 @@
           <WinNumber>1</WinNumber>
           <ItemText>VT13remoteBuffer</ItemText>
         </Ww>
+        <Ww>
+          <count>21</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>ProtocolData</ItemText>
+        </Ww>
+        <Ww>
+          <count>22</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>Buf[i]</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>
@@ -465,10 +395,18 @@
         <Mm>
           <WinNumber>1</WinNumber>
           <SubType>0</SubType>
-          <ItemText>pitchAngleTarget</ItemText>
+          <ItemText>0x20013f06</ItemText>
           <AccSizeX>0</AccSizeX>
         </Mm>
       </MemoryWindow1>
+      <MemoryWindow2>
+        <Mm>
+          <WinNumber>2</WinNumber>
+          <SubType>0</SubType>
+          <ItemText>0x2001476c</ItemText>
+          <AccSizeX>0</AccSizeX>
+        </Mm>
+      </MemoryWindow2>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>
