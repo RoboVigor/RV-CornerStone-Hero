@@ -28,12 +28,15 @@ int main(void) {
 
     // 发射机构电机
     Motor_Init(&Motor_Stir, STIR_MOTOR_REDUCTION_RATE, ENABLE, DISABLE); // 拨弹
-    Motor_Init(&Motor_FL, 1, DISABLE, DISABLE);
-    Motor_Init(&Motor_FR, 1, DISABLE, DISABLE);
+    Motor_Init(&Motor_FL, 1, DISABLE, ENABLE);
+    Motor_Init(&Motor_FR, 1, DISABLE, ENABLE);
+	Motor_Init(&Motor_FT, 1, DISABLE, ENABLE);
+
 
     // 云台电机
     Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
     Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
+
 
     // 遥控器数据初始化
     Remote_Init(&remoteData, &keyboardData, &mouseData);
@@ -81,8 +84,9 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x205, &Motor_RF);
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x206, &Motor_Pitch);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x206, &Motor_Yaw);
-    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x203, &Motor_FL);
-    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x202, &Motor_FR);
+    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x202, &Motor_FL);
+    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x203, &Motor_FR);
+    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x204, &Motor_FT);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x207, &Motor_Stir);
 
     // 总线设置
@@ -99,6 +103,8 @@ int main(void) {
     DebugData = &(ProtocolData.debugInfo.debugData);
 
     USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
+	
+    //DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001);
 
     // 安全延时
     delay_ms(500);

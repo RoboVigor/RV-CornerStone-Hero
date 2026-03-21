@@ -340,7 +340,7 @@
               <MiscControls>--gnu</MiscControls>
               <Define>STM32F427_437xx,USE_STDPERIPH_DRIVER,ROBOT_LOOP_ONE.__TARGET_FPU_CM4,ARM_MATH_CM4,__CC_ARM,USE_STDPERIPH_DRIVER,USE_USB_OTG_FS</Define>
               <Undefine></Undefine>
-              <IncludePath>..\core;..\bsp\inc;..\driver\inc;..\library\std\inc;..\user;..\library\freertos\include;..\library\freertos\portable\RVDS\ARM_CM4F;..\user\common;..\library\atom\delay;..\library\atom\sys;..\library\atom\usart;..\library\atom\debug;..\library\mpu6500;..\user\infantry;..\library\vegmath;..\user\common;..\device\inc;..\library\ekf;..\library\usb\STM32_USB_OTG_Driver\inc;..\library\usb\STM32_USB_Device_Library\Core\inc;..\library\usb\STM32_USB_Device_Library\Class\cdc\inc</IncludePath>
+              <IncludePath>..\core;..\bsp\inc;..\driver\inc;..\library\std\inc;..\user;..\library\freertos\include;..\library\freertos\portable\RVDS\ARM_CM4F;..\user\common;..\library\atom\delay;..\library\atom\sys;..\library\atom\usart;..\library\atom\debug;..\library\mpu6500;..\user\infantry;..\library\vegmath;..\user\common;..\device\inc;..\library\ekf;..\library\usb\STM32_USB_OTG_Driver\inc;..\library\usb\STM32_USB_Device_Library\Core\inc;..\library\usb\STM32_USB_Device_Library\Class\cdc\inc;..\library\DM_Driver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -588,6 +588,11 @@
               <FileName>usbd_cdc_if.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\library\usb\STM32_USB_Device_Library\Class\cdc\src\usbd_cdc_if.c</FilePath>
+            </File>
+            <File>
+              <FileName>DM_Driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\library\DM_Driver\DM_Driver.c</FilePath>
             </File>
           </Files>
         </Group>

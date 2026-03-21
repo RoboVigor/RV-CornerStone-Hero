@@ -30,6 +30,7 @@
 #include "Driver_Vofa.h"
 
 #include "usbd_cdc_if.h"
+#include "DM_Driver.h"
 
 #ifdef __HANDLE_GLOBALS
 #define __HANDLE_EXT
@@ -94,8 +95,9 @@ __HANDLE_EXT Node_Type         Node_Judge, Node_Host, Node_Board, Node_SuperCap,
 __HANDLE_EXT PWM_Type PWM_Magazine_Servo;
 
 // 发射机构
-__HANDLE_EXT Motor_Type Motor_Stir, Motor_FL, Motor_FR;                     // 左/右 摩擦轮 拨弹轮 电机
-__HANDLE_EXT PID_Type   PID_StirSpeed, PID_StirAngle, PID_FireL, PID_FireR; // 拨弹轮 速度/角度 PID
+__HANDLE_EXT DM_Motor_Type Motor_Stir;
+__HANDLE_EXT Motor_Type    Motor_FL, Motor_FR,Motor_FT;                                 // 左/右 摩擦轮 拨弹轮 电机
+__HANDLE_EXT PID_Type      PID_StirSpeed, PID_StirAngle, PID_FireL, PID_FireR,PID_FireT; // 拨弹轮 速度/角度 PID
 
 // PWM
 __HANDLE_EXT PWM_Type PWM_Test;

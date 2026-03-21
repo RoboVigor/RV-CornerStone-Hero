@@ -71,6 +71,7 @@ void Task_Can_Send(void *Parameters) {
     int        intervalms   = interval * 1000;     // 任务运行间隔 ms
     while (1) {
         Bridge_Send_Motor(&BridgeData, SafetyMode);
+        DM_Motor_Control(&Motor_Stir);
         vTaskDelayUntil(&LastWakeTime, intervalms); // 发送频率
     }
     vTaskDelete(NULL);
@@ -526,8 +527,7 @@ void Task_Fire_Stir(void *Parameters) {
     int16_t lastSeq = 0;
 
     // PID 初始化
-    PID_Init(&PID_StirAngle, 1, 0, 0, 9000, 6000);  // 拨弹轮角度环
-    PID_Init(&PID_StirSpeed, 10, 0, 0, 6000, 1000); // 拨弹轮速度环
+    DM_Motor_PID_Init(&Motor_Stir, 0, 0.07f);
 
     // TEST
     //	PID_Init(&PID_FireL, 3, 0, 0, 16384, 1000);
@@ -605,10 +605,10 @@ void Task_Fire_Stir(void *Parameters) {
             //						Motor_FR.input = 1*PID_FireR.output;
         }
 
-        // stirSpeed=0;
+         stirSpeed=3;
+		stirAngle+=stirSpeed;
 
-        PID_Calculate(&PID_StirSpeed, stirSpeed, Motor_Stir.speed * RPM2RPS);
-        Motor_Stir.input = -PID_StirSpeed.output;
+        DM_Motor_Input(&Motor_Stir, 0, 5.0f, 0);
 
         // DebugData.debug1 = PID_StirSpeed.output;
         // DebugData.debug2 = shootMode;
@@ -635,6 +635,7 @@ void Task_Fire_Frict(void *Parameters) {
 
     PID_Init(&PID_FireL, 3, 0, 0, 16384, 1200);
     PID_Init(&PID_FireR, 3, 0, 0, 16384, 1200);
+    PID_Init(&PID_FireT, 3, 0, 0, 16384, 1200);
 
     while (1) {
 
@@ -705,11 +706,13 @@ void Task_Fire_Frict(void *Parameters) {
         //			Motor_FL.input = PID_FireL.output;
         //			Motor_FR.input = PID_FireR.output;
         //        }
-        targetSpeed = -4000;
+        targetSpeed = -2000;
         PID_Calculate(&PID_FireL, targetSpeed, Motor_FL.speed);
-        PID_Calculate(&PID_FireR, -2 * targetSpeed, Motor_FR.speed);
+        PID_Calculate(&PID_FireR, targetSpeed, Motor_FR.speed);
+        PID_Calculate(&PID_FireT, targetSpeed, Motor_FT.speed);
         Motor_FL.input = PID_FireL.output;
         Motor_FR.input = PID_FireR.output;
+        Motor_FT.input = PID_FireT.output;
 
         /*else {
     targetSpeed = 4450;
