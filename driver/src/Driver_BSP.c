@@ -182,7 +182,7 @@ void BSP_Remote_Init(uint8_t *remoteBuffer) {
     USART_DMACmd(REMOTE_USART, USART_DMAReq_Rx, ENABLE);
     DMA_InitTypeDef DMA_InitStructure;
     RCC_AHB1PeriphClockCmd(REMOTE_RCC_AHB1Periph_DMA, ENABLE);
-    DMA_InitStructure.DMA_Channel            = DMA_Channel_4;
+    DMA_InitStructure.DMA_Channel            = REMOTE_DMA_CHANNEL;
     DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) (&REMOTE_USART->DR);
     DMA_InitStructure.DMA_Memory0BaseAddr    = (uint32_t) (remoteBuffer);
     DMA_InitStructure.DMA_DIR                = DMA_DIR_PeripheralToMemory;

@@ -25,22 +25,24 @@
 
 #define REMOTE_RCC_AHB1Periph_DMA RCC_AHB1Periph_DMA2
 #define REMOTE_DMA_STREAM DMA2_Stream2
+#define REMOTE_DMA_CHANNEL DMA_Channel_4
 
 #else
 // VT13图传接收数据帧长度
 #define REMOTE_LENGTH 21     // DBUS数据帧长
 #define REMOTE_BACK_LENGTH 1 // 增加一个字节保持稳定
 
-#define REMOTE_USART UART4
-#define REMOTE_USART_RX UART4_Rx
-#define REMOTE_USART_TX UART4_Tx
+#define REMOTE_USART UART7
+#define REMOTE_USART_RX UART7_Rx
+#define REMOTE_USART_TX UART7_Tx
 
 #define USART_INIT_PARAMS                                                                                                                                      \
-    UART4, RCC_AHB1Periph_GPIOA, GPIO_AF_UART4, GPIO_PinSource1, GPIO_PinSource1, GPIO_Pin_1, GPIOA, RCC_APB1, RCC_APB1Periph_UART4, USART_Mode_Rx,            \
-        UART4_IRQn, 8, REMOTE_BAUD_RATE, USART_IT_IDLE
+    UART7, RCC_AHB1Periph_GPIOE, GPIO_AF_UART7, GPIO_PinSource8, GPIO_PinSource7, GPIO_Pin_7, GPIOE, RCC_APB1, RCC_APB1Periph_UART7, USART_Mode_Rx,            \
+        UART7_IRQn, 8, REMOTE_BAUD_RATE, USART_IT_IDLE
 
 #define REMOTE_RCC_AHB1Periph_DMA RCC_AHB1Periph_DMA1
-#define REMOTE_DMA_STREAM DMA1_Stream2
+#define REMOTE_DMA_STREAM DMA1_Stream3
+#define REMOTE_DMA_CHANNEL DMA_Channel_5
 
 #endif
 

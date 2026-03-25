@@ -1,4 +1,4 @@
-#define __HANDLE_GLOBALS
+﻿#define __HANDLE_GLOBALS
 
 #include "config.h"
 #include "macro.h"
@@ -30,13 +30,11 @@ int main(void) {
     Motor_Init(&Motor_Stir, STIR_MOTOR_REDUCTION_RATE, ENABLE, DISABLE); // 拨弹
     Motor_Init(&Motor_FL, 1, DISABLE, ENABLE);
     Motor_Init(&Motor_FR, 1, DISABLE, ENABLE);
-	Motor_Init(&Motor_FT, 1, DISABLE, ENABLE);
-
+    Motor_Init(&Motor_FT, 1, DISABLE, ENABLE);
 
     // 云台电机
     Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
     Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
-
 
     // 遥控器数据初始化
     Remote_Init(&remoteData, &keyboardData, &mouseData);
@@ -61,7 +59,7 @@ int main(void) {
     BSP_Stone_Id_Init(&Board_Id, &Robot_Id);
 
     // USART
-    BSP_UART7_Init(115200, USART_IT_IDLE);
+    // BSP_UART7_Init(115200, USART_IT_IDLE);
     BSP_UART8_Init(115200, USART_IT_IDLE);
     BSP_USART6_Init(115200, USART_IT_IDLE);
 
@@ -103,8 +101,8 @@ int main(void) {
     DebugData = &(ProtocolData.debugInfo.debugData);
 
     USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
-	
-    //DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001);
+
+    // DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001);
 
     // 安全延时
     delay_ms(500);
