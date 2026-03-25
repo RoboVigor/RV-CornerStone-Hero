@@ -20,13 +20,13 @@ void Task_Control(void *Parameters) {
             // FastmoveMode  = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
             MagzineOpened = LEFT_SWITCH_MIDDLE && RIGHT_SWITCH_TOP;
             FrictEnabled  = 1;
-            StirEnabled   = LEFT_SWITCH_BOTTOM && RIGHT_SWITCH_TOP;
+            StirEnabled   = TRIGGER_PRESSED;
 
             // unused
             // FastShootMode = StirEnabled;
-            PsShootEnabled = 0;
-            SwingMode      = LEFT_SWITCH_MIDDLE && RIGHT_SWITCH_MIDDLE;
-            SafetyMode     = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
+            PsShootEnabled = SWITCH_RIGHT;
+            SwingMode ^= BUTTON_RIGHT_PRESSED;
+            SafetyMode ^= BUTTON_PAUSE_PRESSED;
         } else if (ControlMode == 2) {
             // 键鼠模式
             PsShootEnabled = 0;
@@ -71,7 +71,7 @@ void Task_Can_Send(void *Parameters) {
     int        intervalms   = interval * 1000;     // 任务运行间隔 ms
     while (1) {
         Bridge_Send_Motor(&BridgeData, SafetyMode);
-         DM_Motor_Control(&Motor_Stir);
+        DM_Motor_Control(&Motor_Stir);
         vTaskDelayUntil(&LastWakeTime, intervalms); // 发送频率
     }
     vTaskDelete(NULL);

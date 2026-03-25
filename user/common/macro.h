@@ -30,6 +30,14 @@
 #define RIGHT_SWITCH_TOP    (remoteData.switchRight == 1)
 #define RIGHT_SWITCH_MIDDLE (remoteData.switchRight == 3)
 #define RIGHT_SWITCH_BOTTOM (remoteData.switchRight == 2)
+
+#define SWITCH_LEFT     0
+#define SWITCH_MIDDLE   0
+#define SWITCH_RIGHT    0
+#define BUTTON_PAUSE_PRESSED   0
+#define BUTTON_LEFT_PRESSED    0
+#define BUTTON_RIGHT_PRESSED   0
+#define TRIGGER_PRESSED  0
 #else
 #define LEFT_SWITCH_TOP     0
 #define LEFT_SWITCH_MIDDLE  0
@@ -37,7 +45,17 @@
 #define RIGHT_SWITCH_TOP    0
 #define RIGHT_SWITCH_MIDDLE 0
 #define RIGHT_SWITCH_BOTTOM 0
+
+#define SWITCH_LEFT     (remoteData.gearSwitch==0)
+#define SWITCH_MIDDLE   (remoteData.gearSwitch==1)
+#define SWITCH_RIGHT    (remoteData.gearSwitch==2)
+#define BUTTON_PAUSE_PRESSED   (remoteData.buttonPause==1)
+#define BUTTON_LEFT_PRESSED    (remoteData.buttonLeft==1)
+#define BUTTON_RIGHT_PRESSED   (remoteData.buttonRight==1)
+#define TRIGGER_PRESSED  (remoteData.trigger==1)
+
 #endif
+
 
 // 数值运算
 #define ABS(x) ((x) >= 0 ? (x) : -(x))

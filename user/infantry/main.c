@@ -48,6 +48,7 @@ int main(void) {
 
     // 硬件配置
     BSP_CAN_Init();
+    BSP_Remote_Init(remoteBuffer);
     BSP_TIM2_Init();
     // BSP_IMU_Init();
     BSP_Laser_Init();
@@ -71,8 +72,6 @@ int main(void) {
     Motor_Set_Angle_Bias(&Motor_Yaw, 0);
     Motor_Set_Angle_Bias(&Motor_Pitch, 0);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
-
-    BSP_Remote_Init(remoteBuffer);
 
     // 总线设置
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x201, &Motor_LAJI);
