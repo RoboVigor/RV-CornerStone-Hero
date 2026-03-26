@@ -13,7 +13,7 @@ void Task_Control(void *Parameters) {
     // LASER_ON;
 
     while (1) {
-        ControlMode = LEFT_SWITCH_BOTTOM && RIGHT_SWITCH_BOTTOM ? 2 : 1;
+        ControlMode = 1;
         if (ControlMode == 1) {
             // 遥控器模式
             //  PsAimEnabled  = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
@@ -25,8 +25,11 @@ void Task_Control(void *Parameters) {
             // unused
             // FastShootMode = StirEnabled;
             PsShootEnabled = SWITCH_RIGHT;
-            SwingMode ^= BUTTON_RIGHT_PRESSED;
-            SafetyMode ^= BUTTON_PAUSE_PRESSED;
+            SwingMode      = (remoteData.buttonRight.state == OFF && remoteData.buttonRight.laststate == ON) ? !SwingMode : SwingMode;
+			remoteData.buttonRight.laststate= remoteData.buttonRight.state;
+            SafetyMode     = (remoteData.buttonPause.state == OFF && remoteData.buttonPause.laststate == ON) ? !SwingMode : SwingMode;
+			remoteData.buttonPause.laststate= remoteData.buttonPause.state;
+
         } else if (ControlMode == 2) {
             // 键鼠模式
             PsShootEnabled = 0;
@@ -70,8 +73,8 @@ void Task_Can_Send(void *Parameters) {
     float      interval     = 0.01;                // 任务运行间隔 s
     int        intervalms   = interval * 1000;     // 任务运行间隔 ms
     while (1) {
-        Bridge_Send_Motor(&BridgeData, SafetyMode);
-        DM_Motor_Control(&Motor_Stir);
+        // Bridge_Send_Motor(&BridgeData, SafetyMode);
+        //  DM_Motor_Control(&Motor_Stir);
         vTaskDelayUntil(&LastWakeTime, intervalms); // 发送频率
     }
     vTaskDelete(NULL);
@@ -150,7 +153,6 @@ void Task_Gimbal(void *Parameters) {
 
         // 限制云台运动范围即斜坡补偿
         MIAO(pitchAngleTarget, GIMBAL_PITCH_MIN + chassisAngle, GIMBAL_PITCH_MAX + chassisAngle);
-        ;
 
         // 开机时pitch轴匀速抬起
         if (!pitchInit) {

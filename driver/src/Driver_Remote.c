@@ -15,10 +15,19 @@ void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse) {
     mouse->z = 0;
 
     kb->keyCode = 0;
+
+#ifndef CONTROLLED_BY_DBUS
+    remote->buttonPause.state     = OFF;
+    remote->buttonPause.laststate = OFF;
+    remote->buttonLeft.state      = OFF;
+    remote->buttonLeft.laststate  = OFF;
+    remote->buttonRight.state     = OFF;
+    remote->buttonRight.laststate = OFF;
+#endif
 }
 
 void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t RemoteBuffer[]) {
-#ifdef CONTROLLED_BY_Remote
+#ifdef CONTROLLED_BY_DBUS
     int i;
     remote->state = RemoteWorking;
 
@@ -73,12 +82,15 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     remote->ch4 = (RemoteBuffer[6] >> 1 | RemoteBuffer[7] << 7) & 0x07FF;
     remote->ch4 -= 1024;
 
-    remote->gearSwitch  = (RemoteBuffer[7] & 0x30) >> 4;
-    remote->buttonPause = (RemoteBuffer[7] & 0x40) >> 6;
-    remote->buttonLeft  = (RemoteBuffer[7] & 0x80) >> 7;
-    remote->buttonRight = RemoteBuffer[8] & 0x01;
-    remote->dial        = ((RemoteBuffer[8] >> 1 | RemoteBuffer[9] << 7) & 0x7ff) - 1024;
-    remote->trigger     = (RemoteBuffer[9] & 0x10) >> 4;
+    remote->gearSwitch               = (RemoteBuffer[7] & 0x30) >> 4;
+    //remote->buttonPause.laststate = remote->buttonPause.state;
+    remote->buttonPause.state        = ((RemoteBuffer[7] & 0x40) >> 6) ? ON : OFF;
+    //remote->buttonLeft.laststate  = remote->buttonLeft.state;
+    remote->buttonLeft.state         = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
+    //remote->buttonRight.laststate = remote->buttonRight.state;
+    remote->buttonRight.state        = (RemoteBuffer[8] & 0x01) ? ON : OFF;
+    remote->dial                     = ((RemoteBuffer[8] >> 1 | RemoteBuffer[9] << 7) & 0x7ff) - 1024;
+    remote->trigger                  = (RemoteBuffer[9] & 0x10) >> 4;
 
     mouse->x = RemoteBuffer[10] | (RemoteBuffer[11] << 8);
     mouse->y = RemoteBuffer[12] | (RemoteBuffer[13] << 8);

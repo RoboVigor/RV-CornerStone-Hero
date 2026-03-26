@@ -64,6 +64,12 @@
 #define KEY_W 0x0001
 
 enum DBusState { RemoteIdle, RemoteWorking };
+typedef enum { OFF, ON } ButtonState;
+
+typedef struct {
+    ButtonState state;
+    ButtonState laststate;
+} Button_Type;
 
 // 遥控解码数据存储结构体
 typedef struct {
@@ -96,12 +102,12 @@ typedef struct {
 
     enum DBusState state;
 
-    uint8_t gearSwitch; // 3 value
-    uint8_t buttonPause;
-    uint8_t buttonLeft;
-    uint8_t buttonRight;
-    int16_t dial; // 11位
-    uint8_t trigger;
+    uint8_t     gearSwitch; // 3 value
+    Button_Type buttonPause;
+    Button_Type buttonLeft;
+    Button_Type buttonRight;
+    int16_t     dial; // 11位
+    uint8_t     trigger;
 
 #endif
 } Remote_Type;
