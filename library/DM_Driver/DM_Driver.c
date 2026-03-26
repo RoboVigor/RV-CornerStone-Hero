@@ -1,5 +1,22 @@
 #include "DM_Driver.h"
 
+#define DM_PARAM_TX_CAN_ID ((uint16_t)0x7FF)
+
+static void DM_Motor_Param_Frame_Send(uint16_t motor_id, uint8_t command, uint8_t rid, const uint8_t payload[4]) {
+    uint8_t sendbuff[8];
+
+    sendbuff[0] = (uint8_t)(motor_id & 0xFF);
+    sendbuff[1] = (uint8_t)((motor_id >> 8) & 0xFF);
+    sendbuff[2] = command;
+    sendbuff[3] = rid;
+    sendbuff[4] = payload[0];
+    sendbuff[5] = payload[1];
+    sendbuff[6] = payload[2];
+    sendbuff[7] = payload[3];
+
+    Can_Send_Msg(CAN1, DM_PARAM_TX_CAN_ID, sendbuff, 8);
+}
+
 int float_to_uint(float X_float, float X_min, float X_max, int bits) {
     float span   = X_max - X_min;
     float offset = X_min;
@@ -42,6 +59,55 @@ void DM_Motor_Command(DM_Motor_Type *motor, uint8_t command) {
     }
 
     Can_Send_Msg(CAN1, motor->id, sendbuff, 8);
+}
+
+void DM_Motor_Read_Param(DM_Motor_Type *motor, uint8_t rid) {
+    const uint8_t zero_payload[4] = {0, 0, 0, 0};
+    DM_Motor_Param_Frame_Send(motor->id, DM_PARAM_CMD_READ, rid, zero_payload);
+}
+
+void DM_Motor_Write_Param(DM_Motor_Type *motor, uint8_t rid, const uint8_t write_param[4]) {
+    DM_Motor_Param_Frame_Send(motor->id, DM_PARAM_CMD_WRITE, rid, write_param);
+}
+
+void DM_Motor_Write_Param_U32(DM_Motor_Type *motor, uint8_t rid, uint32_t value) {
+    uint8_t payload[4];
+
+    payload[0] = (uint8_t)(value & 0xFF);
+    payload[1] = (uint8_t)((value >> 8) & 0xFF);
+    payload[2] = (uint8_t)((value >> 16) & 0xFF);
+    payload[3] = (uint8_t)((value >> 24) & 0xFF);
+
+    DM_Motor_Write_Param(motor, rid, payload);
+}
+
+void DM_Motor_Write_Param_Float(DM_Motor_Type *motor, uint8_t rid, float value) {
+    union {
+        float    f;
+        uint32_t u32;
+    } converter;
+
+    converter.f = value;
+    DM_Motor_Write_Param_U32(motor, rid, converter.u32);
+}
+
+void DM_Motor_Save_Param(DM_Motor_Type *motor) {
+    const uint8_t save_payload[4] = {0, 0, 0, 0};
+    DM_Motor_Param_Frame_Send(motor->id, DM_PARAM_CMD_SAVE, 1, save_payload);
+}
+
+uint32_t DM_Motor_Param_U32_From_Rx(const uint8_t rx_data[8]) {
+    return ((uint32_t) rx_data[4]) | ((uint32_t) rx_data[5] << 8) | ((uint32_t) rx_data[6] << 16) | ((uint32_t) rx_data[7] << 24);
+}
+
+float DM_Motor_Param_Float_From_Rx(const uint8_t rx_data[8]) {
+    union {
+        uint32_t u32;
+        float    f;
+    } converter;
+
+    converter.u32 = DM_Motor_Param_U32_From_Rx(rx_data);
+    return converter.f;
 }
 
 void DM_Motor_Control(DM_Motor_Type *motor) {

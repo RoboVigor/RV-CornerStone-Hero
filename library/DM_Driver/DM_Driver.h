@@ -5,6 +5,11 @@
 
 enum DM_Motor_Command { Motor_Enble, Motor_Disable };
 enum DM_Motor_Mode { MODE_MIT, MODE_POS_VEL, MODE_SPEED };
+enum DM_Motor_Param_Command {
+    DM_PARAM_CMD_READ  = 0x33,
+    DM_PARAM_CMD_WRITE = 0x55,
+    DM_PARAM_CMD_SAVE  = 0xAA
+};
 
 typedef struct {
     uint16_t id;
@@ -30,5 +35,14 @@ void DM_Motor_PID_Init(DM_Motor_Type *motor, float kp, float kd);
 void DM_Motor_Input(DM_Motor_Type *motor, float p_des, float v_des, float torque);
 
 void DM_Motor_Control(DM_Motor_Type *motor);
+
+void DM_Motor_Read_Param(DM_Motor_Type *motor, uint8_t rid);
+void DM_Motor_Write_Param(DM_Motor_Type *motor, uint8_t rid, const uint8_t write_param[4]);
+void DM_Motor_Write_Param_U32(DM_Motor_Type *motor, uint8_t rid, uint32_t value);
+void DM_Motor_Write_Param_Float(DM_Motor_Type *motor, uint8_t rid, float value);
+void DM_Motor_Save_Param(DM_Motor_Type *motor);
+
+uint32_t DM_Motor_Param_U32_From_Rx(const uint8_t rx_data[8]);
+float    DM_Motor_Param_Float_From_Rx(const uint8_t rx_data[8]);
 
 #endif

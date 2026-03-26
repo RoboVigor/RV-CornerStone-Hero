@@ -1,4 +1,4 @@
-﻿#define __HANDLE_GLOBALS
+#define __HANDLE_GLOBALS
 
 #include "config.h"
 #include "macro.h"
@@ -69,7 +69,7 @@ int main(void) {
     BSP_PWM_Init(&PWM_Magazine_Servo, 9000, 200, TIM_OCPolarity_Low);
 
     // Calibration
-    Motor_Set_Angle_Bias(&Motor_Yaw, 0);
+    Motor_Set_Angle_Bias(&Motor_Yaw, 209.619141);
     Motor_Set_Angle_Bias(&Motor_Pitch, 0);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
 
@@ -79,7 +79,7 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x203, &Motor_LB);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x204, &Motor_RB);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x205, &Motor_RF);
-    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x206, &Motor_Pitch);
+    Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x207, &Motor_Pitch);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x206, &Motor_Yaw);
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x202, &Motor_FL);
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x203, &Motor_FR);
