@@ -1,4 +1,5 @@
 #include "Driver_Remote.h"
+#include "handle.h"
 
 void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse) {
     remote->state = RemoteIdle;
@@ -82,13 +83,31 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     remote->ch4 = (RemoteBuffer[6] >> 1 | RemoteBuffer[7] << 7) & 0x07FF;
     remote->ch4 -= 1024;
 
-    remote->gearSwitch               = (RemoteBuffer[7] & 0x30) >> 4;
-    //remote->buttonPause.laststate = remote->buttonPause.state;
-    remote->buttonPause.state        = ((RemoteBuffer[7] & 0x40) >> 6) ? ON : OFF;
-    //remote->buttonLeft.laststate  = remote->buttonLeft.state;
-    remote->buttonLeft.state         = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
-    //remote->buttonRight.laststate = remote->buttonRight.state;
-    remote->buttonRight.state        = (RemoteBuffer[8] & 0x01) ? ON : OFF;
+    remote->gearSwitch = (RemoteBuffer[7] & 0x30) >> 4;
+
+    {
+        ButtonState pauseRaw  = ((RemoteBuffer[7] & 0x40) >> 6) ? ON : OFF;
+        ButtonState leftRaw   = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
+        ButtonState rightRaw  = (RemoteBuffer[8] & 0x01) ? ON : OFF;
+
+        if (pauseRaw == ON && remote->buttonPause.laststate == OFF) {
+            remote->buttonPause.state = (remote->buttonPause.state == ON) ? OFF : ON;
+        }
+        if (leftRaw == ON && remote->buttonLeft.laststate == OFF) {
+            remote->buttonLeft.state = (remote->buttonLeft.state == ON) ? OFF : ON;
+        }
+        if (rightRaw == ON && remote->buttonRight.laststate == OFF) {
+            remote->buttonRight.state = (remote->buttonRight.state == ON) ? OFF : ON;
+        }
+
+        remote->buttonPause.laststate = pauseRaw;
+        remote->buttonLeft.laststate  = leftRaw;
+        remote->buttonRight.laststate = rightRaw;
+
+        // VofaData -> debug4 = pauseRaw;
+        // VofaData -> debug5 = leftRaw;
+        // VofaData -> debug6 = rightRaw;
+    }
     remote->dial                     = ((RemoteBuffer[8] >> 1 | RemoteBuffer[9] << 7) & 0x7ff) - 1024;
     remote->trigger                  = (RemoteBuffer[9] & 0x10) >> 4;
 
@@ -100,6 +119,15 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     mouse->pressRight = RemoteBuffer[16] & 0x0C;
 
     kb->keyCode = (RemoteBuffer[17] | RemoteBuffer[18] << 8);
+
+    // VofaData -> debug0 = remote->ch1;
+    // VofaData -> debug1 = remote->ch2;
+    // VofaData -> debug2 = remote->ch3;
+    // VofaData -> debug3 = remote->ch4;
+    // VofaData -> debug4 = remote->buttonPause.state;
+    // VofaData -> debug5 = remote->buttonLeft.state;
+    // VofaData -> debug6 = remote->buttonRight.state;
+
 #endif
 }
 
