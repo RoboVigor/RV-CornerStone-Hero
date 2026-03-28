@@ -18,7 +18,7 @@
 #define SERIAL_DEBUG_PORT USART6 // 串口调试端口
 
 // 运动参数
-#define GIMBAL_PITCH_MIN -15
+#define GIMBAL_PITCH_MIN -45
 #define GIMBAL_PITCH_MAX 28
 #define CHASSIS_ROTOR_SPEED 550
 

@@ -16,19 +16,19 @@ void Task_Control(void *Parameters) {
         ControlMode = 1;
         if (ControlMode == 1) {
             // 遥控器模式
-            //  PsAimEnabled  = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
+            PsAimEnabled = SWITCH_RIGHT;
             // FastmoveMode  = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
-            MagzineOpened = LEFT_SWITCH_MIDDLE && RIGHT_SWITCH_TOP;
-            FrictEnabled  = 1;
-            StirEnabled   = TRIGGER_PRESSED;
+            // MagzineOpened = LEFT_SWITCH_MIDDLE && RIGHT_SWITCH_TOP;
+            FrictEnabled = 1;
+            StirEnabled  = TRIGGER_PRESSED;
 
             // unused
             // FastShootMode = StirEnabled;
-            PsShootEnabled = SWITCH_RIGHT;
-            SwingMode      = (remoteData.buttonRight.state == OFF && remoteData.buttonRight.laststate == ON) ? !SwingMode : SwingMode;
-			remoteData.buttonRight.laststate= remoteData.buttonRight.state;
-            SafetyMode     = (remoteData.buttonPause.state == OFF && remoteData.buttonPause.laststate == ON) ? !SwingMode : SwingMode;
-			remoteData.buttonPause.laststate= remoteData.buttonPause.state;
+            // PsShootEnabled                   = SWITCH_RIGHT;
+            SwingMode                        = (remoteData.buttonRight.state == OFF && remoteData.buttonRight.laststate == ON) ? !SwingMode : SwingMode;
+            remoteData.buttonRight.laststate = remoteData.buttonRight.state;
+            SafetyMode                       = (remoteData.buttonPause.state == OFF && remoteData.buttonPause.laststate == ON) ? !SwingMode : SwingMode;
+            remoteData.buttonPause.laststate = remoteData.buttonPause.state;
 
         } else if (ControlMode == 2) {
             // 键鼠模式
@@ -73,8 +73,9 @@ void Task_Can_Send(void *Parameters) {
     float      interval     = 0.01;                // 任务运行间隔 s
     int        intervalms   = interval * 1000;     // 任务运行间隔 ms
     while (1) {
-        // Bridge_Send_Motor(&BridgeData, SafetyMode);
-        //  DM_Motor_Control(&Motor_Stir);
+        Bridge_Send_Motor(&BridgeData, SafetyMode);
+        DM_Motor_Control(&Motor_Stir);
+        // DM_Motor_Read_Param(&Motor_Stir, 0x0A);
         vTaskDelayUntil(&LastWakeTime, intervalms); // 发送频率
     }
     vTaskDelete(NULL);
@@ -115,8 +116,8 @@ void Task_Gimbal(void *Parameters) {
     // 初始化云台PID
     PID_Init(&PID_Cloud_YawAngle, 3, 0.1, 0, 4000, 10);
     PID_Init(&PID_Cloud_YawSpeed, 80, 0.01, 0, 23000, 40);
-    PID_Init(&PID_Cloud_PitchAngle, 12, 0, 0, 16000, 1000);
-    PID_Init(&PID_Cloud_PitchSpeed, 100, 0, 0, 20000, 16000);
+    PID_Init(&PID_Cloud_PitchAngle, 1500, 3, 0, 16000, 8000);
+    PID_Init(&PID_Cloud_PitchSpeed, 1, 0, 0, 29000, 16000);
     PID_Init(&PID_Cloud_MotorYawSpeed, 3, 1, 0, 23000, 0);
 
     while (1) {
@@ -189,6 +190,12 @@ void Task_Gimbal(void *Parameters) {
         pitchCurrent      = PID_Cloud_PitchSpeed.output; //-8500 * cos((pitchAngle * PI /180.0f))
         Motor_Yaw.input   = yawCurrent;
         Motor_Pitch.input = pitchCurrent;
+
+        VofaData->debug0 = pitchAngleTarget;
+        VofaData->debug1 = pitchAngle;
+        VofaData->debug2 = PID_Cloud_PitchAngle.output;
+        VofaData->debug3 = pitchSpeed;
+        VofaData->debug4 = PID_Cloud_PitchSpeed.output;
 
         // 任务间隔
         vTaskDelayUntil(&LastWakeTime, intervalms);
@@ -500,14 +507,14 @@ void Task_Fire_Stir(void *Parameters) {
     int   maxBulletSpeed  = 0;
     float lastBulletSpeed = 0;
     float maxShootHeat    = 0;
-    int   stirSpeed       = 0;
+    float stirSpeed       = 0;
     int   stirAngle       = 0;
 
     // 视觉系统
     int16_t lastSeq = 0;
 
     // PID 初始化
-    DM_Motor_PID_Init(&Motor_Stir, 0, 0.07f);
+    DM_Motor_PID_Init(&Motor_Stir, 0, 0.20f);
 
     // TEST
     //	PID_Init(&PID_FireL, 3, 0, 0, 16384, 1000);
@@ -565,30 +572,16 @@ void Task_Fire_Stir(void *Parameters) {
         if (shootMode == shootIdle) {
             // 停止
             stirSpeed = 0;
-            //						targetSpeed = 0;
-            //						PID_Calculate(&PID_FireL, targetSpeed, Motor_FL.speed);
-            //						PID_Calculate(&PID_FireR, -1*targetSpeed, Motor_FR.speed);
-            //						Motor_FL.input = PID_FireL.output;
-            //						Motor_FR.input = PID_FireR.output;
 
         } else if (shootMode == shootToDeath) {
             // 连发
-            stirSpeed = 330;
-            if (mouseData.pressRight) {
-                stirSpeed = 400;
-            }
-            //						targetSpeed = 1000;
-            //						PID_Calculate(&PID_FireL, targetSpeed, Motor_FL.speed);
-            //						PID_Calculate(&PID_FireR, targetSpeed, Motor_FR.speed);
-            //
-            //						Motor_FL.input = -1*PID_FireL.output;
-            //						Motor_FR.input = 1*PID_FireR.output;
+            stirSpeed = 3.0f;
+            //            if (mouseData.pressRight) {
+            //                stirSpeed = 400;
+            //            }
         }
 
-        stirSpeed = 3;
-        stirAngle += stirSpeed;
-
-        DM_Motor_Input(&Motor_Stir, 0, 5.0f, 0);
+        DM_Motor_Input(&Motor_Stir, 0, stirSpeed, 0.5f);
 
         // DebugData.debug1 = PID_StirSpeed.output;
         // DebugData.debug2 = shootMode;
@@ -643,7 +636,7 @@ void Task_Fire_Frict(void *Parameters) {
         //			Motor_FL.input = PID_FireL.output;
         //			Motor_FR.input = PID_FireR.output;
         //        }
-        targetSpeed = -2000;
+        targetSpeed = -4400;
         PID_Calculate(&PID_FireL, targetSpeed, Motor_FL.speed);
         PID_Calculate(&PID_FireR, targetSpeed, Motor_FR.speed);
         PID_Calculate(&PID_FireT, targetSpeed, Motor_FT.speed);

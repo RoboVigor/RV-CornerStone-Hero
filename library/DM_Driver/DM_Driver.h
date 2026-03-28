@@ -3,17 +3,25 @@
 
 #include "Driver_CAN.h"
 
+#define DM_PARAM_TX_CAN_ID ((uint16_t) 0x7FF)
+#define DM_MIT_P_MIN (-12.5f)
+#define DM_MIT_P_MAX (12.5f)
+#define DM_MIT_V_MIN (-12.5f)
+#define DM_MIT_V_MAX (12.5f)
+#define DM_MIT_T_MIN (-100.0f)
+#define DM_MIT_T_MAX (100.0f)
+#define DM_MIT_KP_MIN (0.0f)
+#define DM_MIT_KP_MAX (500.0f)
+#define DM_MIT_KD_MIN (0.0f)
+#define DM_MIT_KD_MAX (5.0f)
+
 enum DM_Motor_Command { Motor_Enble, Motor_Disable };
 enum DM_Motor_Mode { MODE_MIT, MODE_POS_VEL, MODE_SPEED };
-enum DM_Motor_Param_Command {
-    DM_PARAM_CMD_READ  = 0x33,
-    DM_PARAM_CMD_WRITE = 0x55,
-    DM_PARAM_CMD_SAVE  = 0xAA
-};
+enum DM_Motor_Param_Command { DM_PARAM_CMD_READ = 0x33, DM_PARAM_CMD_WRITE = 0x55, DM_PARAM_CMD_SAVE = 0xAA };
 
 typedef struct {
     uint16_t id;
-    uint8_t  mode;
+    uint16_t  mode;
 
     float kp;
     float kd;
@@ -22,11 +30,13 @@ typedef struct {
     float v_des;
     float torque;
 
+    uint8_t inputEnabled;
+
 } DM_Motor_Type;
 
 int float_to_uint(float X_float, float X_min, float X_max, int bits);
 
-void DM_Motor_Init(DM_Motor_Type *motor, uint8_t mode, uint8_t id);
+void DM_Motor_Init(DM_Motor_Type *motor, uint8_t mode, uint8_t id,uint8_t inputEnabled);
 
 void DM_Motor_Command(DM_Motor_Type *motor, uint8_t command);
 

@@ -27,14 +27,13 @@ int main(void) {
     Motor_Init(&Motor_RF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
 
     // 发射机构电机
-    Motor_Init(&Motor_Stir, STIR_MOTOR_REDUCTION_RATE, ENABLE, DISABLE); // 拨弹
     Motor_Init(&Motor_FL, 1, DISABLE, ENABLE);
     Motor_Init(&Motor_FR, 1, DISABLE, ENABLE);
     Motor_Init(&Motor_FT, 1, DISABLE, ENABLE);
 
     // 云台电机
-    Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
-    Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
+    Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
+    Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
 
     // 遥控器数据初始化
     Remote_Init(&remoteData, &keyboardData, &mouseData);
@@ -70,7 +69,7 @@ int main(void) {
 
     // Calibration
     Motor_Set_Angle_Bias(&Motor_Yaw, 209.619141);
-    Motor_Set_Angle_Bias(&Motor_Pitch, 0);
+    Motor_Set_Angle_Bias(&Motor_Pitch, -9.79);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
 
     // 总线设置
@@ -84,7 +83,6 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x202, &Motor_FL);
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x203, &Motor_FR);
     Bridge_Bind(&BridgeData, CAN2_BRIDGE, 0x204, &Motor_FT);
-    Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x207, &Motor_Stir);
 
     // 总线设置
     // Bridge_Bind(&BridgeData, USART_BRIDGE, 7, &Node_Host);
@@ -92,6 +90,8 @@ int main(void) {
     Bridge_Bind(&BridgeData, USART_BRIDGE, 6, &Node_Debug);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x500, &Node_SuperCap);
 
+    DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001, ENABLE);
+	
     // 陀螺仪
     // Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
 
@@ -101,7 +101,6 @@ int main(void) {
 
     USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
 
-    // DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001);
 
     // 安全延时
     delay_ms(500);

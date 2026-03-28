@@ -1,12 +1,10 @@
 #include "DM_Driver.h"
 
-#define DM_PARAM_TX_CAN_ID ((uint16_t)0x7FF)
-
 static void DM_Motor_Param_Frame_Send(uint16_t motor_id, uint8_t command, uint8_t rid, const uint8_t payload[4]) {
     uint8_t sendbuff[8];
 
-    sendbuff[0] = (uint8_t)(motor_id & 0xFF);
-    sendbuff[1] = (uint8_t)((motor_id >> 8) & 0xFF);
+    sendbuff[0] = (uint8_t) (motor_id & 0xFF);
+    sendbuff[1] = (uint8_t) ((motor_id >> 8) & 0xFF);
     sendbuff[2] = command;
     sendbuff[3] = rid;
     sendbuff[4] = payload[0];
@@ -23,11 +21,16 @@ int float_to_uint(float X_float, float X_min, float X_max, int bits) {
     return (int) ((X_float - offset) * ((float) ((1 << bits) - 1)) / span);
 }
 
-void DM_Motor_Init(DM_Motor_Type *motor, uint8_t mode, uint8_t id) {
-    motor->mode = mode;
-    motor->id    = id;
+void DM_Motor_Init(DM_Motor_Type *motor, uint8_t mode, uint8_t id, uint8_t inputEnabled) {
+    motor->mode         = mode;
+    motor->id           = id;
+    motor->inputEnabled = inputEnabled;
 
-    DM_Motor_Command(motor, Motor_Enble);
+    if (motor->inputEnabled) {
+        DM_Motor_Command(motor, Motor_Enble);
+
+        DM_Motor_Write_Param_U32(motor, 0x0A, 0x01);
+    }
 }
 
 void DM_Motor_PID_Init(DM_Motor_Type *motor, float kp, float kd) {
@@ -73,10 +76,10 @@ void DM_Motor_Write_Param(DM_Motor_Type *motor, uint8_t rid, const uint8_t write
 void DM_Motor_Write_Param_U32(DM_Motor_Type *motor, uint8_t rid, uint32_t value) {
     uint8_t payload[4];
 
-    payload[0] = (uint8_t)(value & 0xFF);
-    payload[1] = (uint8_t)((value >> 8) & 0xFF);
-    payload[2] = (uint8_t)((value >> 16) & 0xFF);
-    payload[3] = (uint8_t)((value >> 24) & 0xFF);
+    payload[0] = (uint8_t) (value & 0xFF);
+    payload[1] = (uint8_t) ((value >> 8) & 0xFF);
+    payload[2] = (uint8_t) ((value >> 16) & 0xFF);
+    payload[3] = (uint8_t) ((value >> 24) & 0xFF);
 
     DM_Motor_Write_Param(motor, rid, payload);
 }
@@ -113,14 +116,14 @@ float DM_Motor_Param_Float_From_Rx(const uint8_t rx_data[8]) {
 void DM_Motor_Control(DM_Motor_Type *motor) {
     uint8_t sendbuff[8];
 
-    //if (motor->mode == MODE_MIT) {
+    if (motor->mode == MODE_MIT) {
         uint16_t Position_Tmp, Velocity_Tmp, Torque_Tmp, KP_Tmp, KD_Tmp;
 
-        Position_Tmp = float_to_uint(motor->p_des, -12.5, 12.5, 16);
-        Velocity_Tmp = float_to_uint(motor->v_des, -12.5, -12.5, 12);
-        Torque_Tmp   = float_to_uint(motor->torque, -100, 100, 12);
-        KP_Tmp       = float_to_uint(motor->kp, 0, 500, 12);
-        KD_Tmp       = float_to_uint(motor->kd, 0, 5, 12);
+        Position_Tmp = float_to_uint(motor->p_des, DM_MIT_P_MIN, DM_MIT_P_MAX, 16);
+        Velocity_Tmp = float_to_uint(motor->v_des, DM_MIT_V_MIN, DM_MIT_V_MAX, 12);
+        Torque_Tmp   = float_to_uint(motor->torque, DM_MIT_T_MIN, DM_MIT_T_MAX, 12);
+        KP_Tmp       = float_to_uint(motor->kp, DM_MIT_KP_MIN, DM_MIT_KP_MAX, 12);
+        KD_Tmp       = float_to_uint(motor->kd, DM_MIT_KD_MIN, DM_MIT_KD_MAX, 12);
 
         sendbuff[0] = (uint8_t) (Position_Tmp >> 8);
         sendbuff[1] = (uint8_t) (Position_Tmp);
@@ -130,7 +133,7 @@ void DM_Motor_Control(DM_Motor_Type *motor) {
         sendbuff[5] = (uint8_t) (KD_Tmp >> 4);
         sendbuff[6] = (uint8_t) ((KD_Tmp & 0x0F) << 4) | (Torque_Tmp >> 8);
         sendbuff[7] = (uint8_t) (Torque_Tmp);
-    //}
+    }
 
-    Can_Send_Msg(CAN1, motor->id, sendbuff, 8);
+    if (motor->inputEnabled) Can_Send_Msg(CAN1, motor->id, sendbuff, 8);
 }
