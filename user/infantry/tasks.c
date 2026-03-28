@@ -24,11 +24,9 @@ void Task_Control(void *Parameters) {
 
             // unused
             // FastShootMode = StirEnabled;
-            // PsShootEnabled                   = SWITCH_RIGHT;
-            SwingMode                        = (remoteData.buttonRight.state == OFF && remoteData.buttonRight.laststate == ON) ? !SwingMode : SwingMode;
-            remoteData.buttonRight.laststate = remoteData.buttonRight.state;
-            SafetyMode                       = (remoteData.buttonPause.state == OFF && remoteData.buttonPause.laststate == ON) ? !SwingMode : SwingMode;
-            remoteData.buttonPause.laststate = remoteData.buttonPause.state;
+            PsShootEnabled = SWITCH_RIGHT;
+            SwingMode      = (remoteData.buttonRight.state == ON);
+            SafetyMode     = (remoteData.buttonPause.state == ON);
 
         } else if (ControlMode == 2) {
             // 键鼠模式

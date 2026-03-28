@@ -49,9 +49,12 @@
 #define SWITCH_LEFT     (remoteData.gearSwitch==0)
 #define SWITCH_MIDDLE   (remoteData.gearSwitch==1)
 #define SWITCH_RIGHT    (remoteData.gearSwitch==2)
-#define BUTTON_PAUSE_PRESSED   (remoteData.buttonPause.state==1)
-#define BUTTON_LEFT_PRESSED    (remoteData.buttonLeft.state==1)
-#define BUTTON_RIGHT_PRESSED   (remoteData.buttonRight.state==1)
+#define BUTTON_PAUSE_PRESSED   (remoteData.buttonPause.isPressed==1)
+#define BUTTON_LEFT_PRESSED    (remoteData.buttonLeft.isPressed==1)
+#define BUTTON_RIGHT_PRESSED   (remoteData.buttonRight.isPressed==1)
+#define BUTTON_PAUSE_TOGGLED   (remoteData.buttonPause.state==1)
+#define BUTTON_LEFT_TOGGLED    (remoteData.buttonLeft.state==1)
+#define BUTTON_RIGHT_TOGGLED   (remoteData.buttonRight.state==1)
 #define TRIGGER_PRESSED  (remoteData.trigger==1)
 
 #endif
