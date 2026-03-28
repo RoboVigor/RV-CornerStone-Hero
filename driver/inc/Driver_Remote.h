@@ -69,6 +69,7 @@ typedef enum { OFF, ON } ButtonState;
 typedef struct {
     ButtonState state;
     ButtonState laststate;
+    ButtonState isPressed;
 } Button_Type;
 
 // 遥控解码数据存储结构体

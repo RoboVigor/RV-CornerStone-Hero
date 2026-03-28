@@ -189,10 +189,10 @@ int Gyroscope_Update(GyroscopeData_Type *GyroscopeData) {
     // 读取完成进行解算
     uint32_t lasttime = imu_data.timestamp.us_time;
     Gyroscope_Solve(GyroscopeData);
-    VofaData->debug0 = GyroscopeData->roll;
-    VofaData->debug1 = GyroscopeData->pitch;
-    VofaData->debug2 = GyroscopeData->yaw;
-    VofaData->debug3 = imu_data.timestamp.us_time - lasttime;
+    // VofaData->debug0 = GyroscopeData->roll;
+    // VofaData->debug1 = GyroscopeData->pitch;
+    // VofaData->debug2 = GyroscopeData->yaw;
+    // VofaData->debug3 = imu_data.timestamp.us_time - lasttime;
     // 返回成功值
     return 1;
 }

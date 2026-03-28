@@ -20,10 +20,13 @@ void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse) {
 #ifndef CONTROLLED_BY_DBUS
     remote->buttonPause.state     = OFF;
     remote->buttonPause.laststate = OFF;
+    remote->buttonPause.isPressed = OFF;
     remote->buttonLeft.state      = OFF;
     remote->buttonLeft.laststate  = OFF;
+    remote->buttonLeft.isPressed  = OFF;
     remote->buttonRight.state     = OFF;
     remote->buttonRight.laststate = OFF;
+    remote->buttonRight.isPressed = OFF;
 #endif
 }
 
@@ -90,6 +93,10 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
         ButtonState leftRaw   = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
         ButtonState rightRaw  = (RemoteBuffer[8] & 0x01) ? ON : OFF;
 
+        remote->buttonPause.isPressed = pauseRaw;
+        remote->buttonLeft.isPressed  = leftRaw;
+        remote->buttonRight.isPressed = rightRaw;
+
         if (pauseRaw == ON && remote->buttonPause.laststate == OFF) {
             remote->buttonPause.state = (remote->buttonPause.state == ON) ? OFF : ON;
         }
@@ -124,9 +131,12 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     // VofaData -> debug1 = remote->ch2;
     // VofaData -> debug2 = remote->ch3;
     // VofaData -> debug3 = remote->ch4;
-    // VofaData -> debug4 = remote->buttonPause.state;
-    // VofaData -> debug5 = remote->buttonLeft.state;
-    // VofaData -> debug6 = remote->buttonRight.state;
+    VofaData -> debug3 = remote->buttonPause.state;
+    VofaData -> debug4 = remote->buttonLeft.state;
+    VofaData -> debug5 = remote->buttonRight.state;
+    VofaData->debug0 = remote->buttonLeft.isPressed;
+    VofaData->debug1 = remote->buttonRight.isPressed;
+    VofaData->debug2 = remote->buttonPause.isPressed;
 
 #endif
 }
