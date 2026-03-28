@@ -315,6 +315,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>PID_Cloud_PitchAngle</ItemText>
         </Ww>
+        <Ww>
+          <count>31</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>keyboardData</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>

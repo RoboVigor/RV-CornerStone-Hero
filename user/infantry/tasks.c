@@ -13,10 +13,10 @@ void Task_Control(void *Parameters) {
     // LASER_ON;
 
     while (1) {
-        ControlMode = 1;
+        ControlMode = remoteData.gearSwitch;
         if (ControlMode == 1) {
             // 遥控器模式
-            PsAimEnabled = SWITCH_RIGHT;
+            PsAimEnabled = BUTTON_RIGHT_PRESSED;
             // FastmoveMode  = LEFT_SWITCH_TOP && RIGHT_SWITCH_TOP;
             // MagzineOpened = LEFT_SWITCH_MIDDLE && RIGHT_SWITCH_TOP;
             FrictEnabled = 1;
@@ -24,9 +24,9 @@ void Task_Control(void *Parameters) {
 
             // unused
             // FastShootMode = StirEnabled;
-            PsShootEnabled = SWITCH_RIGHT;
-            SwingMode      = (remoteData.buttonRight.state == ON);
-            SafetyMode     = (remoteData.buttonPause.state == ON);
+            // PsShootEnabled = SWITCH_RIGHT;
+            SwingMode  = (remoteData.buttonRight.state == ON);
+            SafetyMode = (remoteData.buttonPause.state == ON);
 
         } else if (ControlMode == 2) {
             // 键鼠模式
@@ -115,7 +115,7 @@ void Task_Gimbal(void *Parameters) {
     PID_Init(&PID_Cloud_YawAngle, 3, 0.1, 0, 4000, 10);
     PID_Init(&PID_Cloud_YawSpeed, 80, 0.01, 0, 23000, 40);
     PID_Init(&PID_Cloud_PitchAngle, 1500, 3, 0, 16000, 8000);
-    PID_Init(&PID_Cloud_PitchSpeed, 1, 0, 0, 29000, 16000);
+    PID_Init(&PID_Cloud_PitchSpeed, 1, 0, 0, 23000, 16000);
     PID_Init(&PID_Cloud_MotorYawSpeed, 3, 1, 0, 23000, 0);
 
     while (1) {
@@ -137,7 +137,7 @@ void Task_Gimbal(void *Parameters) {
             if (ABS(remoteData.ry) > 30) pitchAngleTargetControl = remoteData.ry / 660.0f * 360 * interval * 0.1;
         } else if (ControlMode == 2) {
             yawAngleTargetControl   = -mouseData.x * 0.5 * interval; // 0.005
-            pitchAngleTargetControl = mouseData.y * 0.3 * interval;
+            pitchAngleTargetControl = -mouseData.y * 0.3 * interval;
         }
         yawAngleTarget += yawAngleTargetControl;
         pitchAngleTarget += pitchAngleTargetControl;
