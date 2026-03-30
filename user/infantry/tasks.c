@@ -25,7 +25,7 @@ void Task_Control(void *Parameters) {
             // unused
             // FastShootMode = StirEnabled;
             // PsShootEnabled = SWITCH_RIGHT;
-            SwingMode  = (remoteData.buttonRight.state == ON);
+            SwingMode  = (remoteData.buttonLeft.state == ON);
             SafetyMode = (remoteData.buttonPause.state == ON);
 
         } else if (ControlMode == 2) {
@@ -99,7 +99,10 @@ void Task_Gimbal(void *Parameters) {
     float  pitchAngleTargetFix       = 0; // 上坡补偿
     float  pitchAngleTargetFixStable = 0; // 上坡补偿
     float  yawAngleTargetPs          = 0; // 视觉辅助
+    float  yaw_angle_diff_new        = 0; // 视觉辅助
+    float  yaw_angle_diff_old        = 0; // 视觉辅助
     float  pitchAngleTargetPs        = 0; // 视觉辅助
+    float  pitchLastAngleTargetPs    = 0; // 视觉辅助
     int8_t pitchInit                 = 0; // pitch启动初始校准
 
     // 输出量
@@ -112,10 +115,10 @@ void Task_Gimbal(void *Parameters) {
     float pitchAngleTargetRamp = 0;
 
     // 初始化云台PID
-    PID_Init(&PID_Cloud_YawAngle, 3, 0.1, 0, 4000, 10);
-    PID_Init(&PID_Cloud_YawSpeed, 80, 0.01, 0, 23000, 40);
-    PID_Init(&PID_Cloud_PitchAngle, 1500, 3, 0, 16000, 8000);
-    PID_Init(&PID_Cloud_PitchSpeed, 1, 0, 0, 23000, 16000);
+    PID_Init(&PID_Cloud_YawAngle, 8, 0, 0, 4000, 100);
+    PID_Init(&PID_Cloud_YawSpeed, 500, 0, 50, 23000, 40);
+    PID_Init(&PID_Cloud_PitchAngle, 14, 0.1, 0, 180, 120);
+    PID_Init(&PID_Cloud_PitchSpeed, 100, 0, 0, 23000, 0);
     PID_Init(&PID_Cloud_MotorYawSpeed, 3, 1, 0, 23000, 0);
 
     while (1) {
@@ -134,20 +137,29 @@ void Task_Gimbal(void *Parameters) {
         // 遥控器输入角度目标
         if (ControlMode == 1) {
             if (ABS(remoteData.rx) > 30) yawAngleTargetControl = -remoteData.rx / 660.0f * 360 * interval * 0.4;
-            if (ABS(remoteData.ry) > 30) pitchAngleTargetControl = remoteData.ry / 660.0f * 360 * interval * 0.1;
+            if (ABS(remoteData.ry) > 30) pitchAngleTargetControl = remoteData.ry / 660.0f * 360 * interval * 0.05;
         } else if (ControlMode == 2) {
             yawAngleTargetControl   = -mouseData.x * 0.5 * interval; // 0.005
-            pitchAngleTargetControl = -mouseData.y * 0.3 * interval;
+            pitchAngleTargetControl = -mouseData.y * 0.2 * interval;
         }
         yawAngleTarget += yawAngleTargetControl;
         pitchAngleTarget += pitchAngleTargetControl;
 
         // 视觉辅助
-        yawAngleTargetPs   = HostAutoaimData.yaw_angle_diff;
         pitchAngleTargetPs = HostAutoaimData.pitch_angle_diff;
         if (PsAimEnabled) {
-            yawAngleTarget   = yawAngle + yawAngleTargetPs;
-            pitchAngleTarget = pitchAngle + pitchAngleTargetPs;
+            yaw_angle_diff_new = HostAutoaimData.yaw_angle_diff;
+            if (yaw_angle_diff_new / yaw_angle_diff_old < 0)
+                yawAngleTargetPs = 0.3 * yaw_angle_diff_new;
+            else
+                yawAngleTargetPs = yaw_angle_diff_new + (yaw_angle_diff_new - yaw_angle_diff_old) / intervalms * 200;
+            yaw_angle_diff_old = HostAutoaimData.yaw_angle_diff;
+            yawAngleTarget     = yawAngle + yawAngleTargetPs;
+            pitchAngleTarget   = pitchAngle + pitchAngleTargetPs;
+        } else {
+            yaw_angle_diff_new = HostAutoaimData.yaw_angle_diff;
+            yawAngleTargetPs   = HostAutoaimData.yaw_angle_diff;
+            yaw_angle_diff_old = HostAutoaimData.yaw_angle_diff;
         }
 
         // 限制云台运动范围即斜坡补偿
@@ -170,6 +182,15 @@ void Task_Gimbal(void *Parameters) {
         //     pitchInit = 0;
         // }
 
+        if (PsAimEnabled) {
+            // PID_Cloud_YawSpeed.p   = 100;
+            PID_Cloud_PitchSpeed.p = 40;
+
+        } else {
+            PID_Cloud_YawSpeed.p   = 500;
+            PID_Cloud_PitchSpeed.p = 100;
+        }
+
         // 计算PID
         PID_Calculate(&PID_Cloud_YawAngle, yawAngleTarget, Gyroscope_EulerData.yaw);
         PID_Calculate(&PID_Cloud_YawSpeed, PID_Cloud_YawAngle.output, yawSpeed);
@@ -185,15 +206,23 @@ void Task_Gimbal(void *Parameters) {
         } else {
             yawCurrent = PID_Cloud_YawSpeed.output;
         }
-        pitchCurrent      = PID_Cloud_PitchSpeed.output; //-8500 * cos((pitchAngle * PI /180.0f))
+        pitchCurrent      = PID_Cloud_PitchSpeed.output - 6000; //-8500 * cos((pitchAngle * PI /180.0f))
         Motor_Yaw.input   = yawCurrent;
         Motor_Pitch.input = pitchCurrent;
 
-        VofaData->debug0 = pitchAngleTarget;
-        VofaData->debug1 = pitchAngle;
-        VofaData->debug2 = PID_Cloud_PitchAngle.output;
-        VofaData->debug3 = pitchSpeed;
-        VofaData->debug4 = PID_Cloud_PitchSpeed.output;
+        // VofaData->debug0 = pitchAngleTarget;
+        // VofaData->debug1 = pitchAngle;
+        // VofaData->debug2 = PID_Cloud_PitchAngle.output;
+        // .->debug3 = pitchSpeed;
+        // VofaData->debug4 = PID_Cloud_PitchSpeed.output;
+
+        VofaData->debug0 = yawAngleTargetPs;
+        VofaData->debug1 = yawAngle;
+        VofaData->debug2 = PID_Cloud_YawAngle.output;
+        VofaData->debug3 = yaw_angle_diff_new;
+        VofaData->debug4 = yaw_angle_diff_old;
+        VofaData->debug5 = yawAngleTarget;
+        // VofaData->debug6 = Node_Host.receiveSeq;
 
         // 任务间隔
         vTaskDelayUntil(&LastWakeTime, intervalms);
