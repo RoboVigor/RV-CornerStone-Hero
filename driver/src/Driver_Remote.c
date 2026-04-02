@@ -89,9 +89,9 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     remote->gearSwitch = (RemoteBuffer[7] & 0x30) >> 4;
 
     {
-        ButtonState pauseRaw  = ((RemoteBuffer[7] & 0x40) >> 6) ? ON : OFF;
-        ButtonState leftRaw   = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
-        ButtonState rightRaw  = (RemoteBuffer[8] & 0x01) ? ON : OFF;
+        ButtonState pauseRaw = ((RemoteBuffer[7] & 0x40) >> 6) ? ON : OFF;
+        ButtonState leftRaw  = ((RemoteBuffer[7] & 0x80) >> 7) ? ON : OFF;
+        ButtonState rightRaw = (RemoteBuffer[8] & 0x01) ? ON : OFF;
 
         remote->buttonPause.isPressed = pauseRaw;
         remote->buttonLeft.isPressed  = leftRaw;
@@ -115,8 +115,8 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
         // VofaData -> debug5 = leftRaw;
         // VofaData -> debug6 = rightRaw;
     }
-    remote->dial                     = ((RemoteBuffer[8] >> 1 | RemoteBuffer[9] << 7) & 0x7ff) - 1024;
-    remote->trigger                  = (RemoteBuffer[9] & 0x10) >> 4;
+    remote->dial    = ((RemoteBuffer[8] >> 1 | RemoteBuffer[9] << 7) & 0x7ff) - 1024;
+    remote->trigger = (RemoteBuffer[9] & 0x10) >> 4;
 
     mouse->x = RemoteBuffer[10] | (RemoteBuffer[11] << 8);
     mouse->y = RemoteBuffer[12] | (RemoteBuffer[13] << 8);
@@ -131,12 +131,12 @@ void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, ui
     // VofaData -> debug1 = remote->ch2;
     // VofaData -> debug2 = remote->ch3;
     // VofaData -> debug3 = remote->ch4;
-    VofaData -> debug3 = remote->buttonPause.state;
-    VofaData -> debug4 = remote->buttonLeft.state;
-    VofaData -> debug5 = remote->buttonRight.state;
-    VofaData->debug0 = remote->buttonLeft.isPressed;
-    VofaData->debug1 = remote->buttonRight.isPressed;
-    VofaData->debug2 = remote->buttonPause.isPressed;
+    // VofaData -> debug3 = remote->buttonPause.state;
+    // VofaData -> debug4 = remote->buttonLeft.state;
+    // VofaData -> debug5 = remote->buttonRight.state;
+    // VofaData->debug0 = remote->buttonLeft.isPressed;
+    // VofaData->debug1 = remote->buttonRight.isPressed;
+    // VofaData->debug2 = remote->buttonPause.isPressed;
 
 #endif
 }

@@ -82,9 +82,10 @@ void Task_Can_Send(void *Parameters) {
 void Task_Gimbal(void *Parameters) {
     xEventGroupWaitBits(InitEventGroup, INIT_EVENT_ALL, pdFALSE, pdTRUE, portMAX_DELAY);
     // 任务
-    TickType_t LastWakeTime = xTaskGetTickCount(); // 时钟
-    float      interval     = 0.005;               // 任务运行间隔 s
-    int16_t    intervalms   = interval * 1000;     // 任务运行间隔 ms
+    TickType_t      LastWakeTime = xTaskGetTickCount(); // 时钟
+    float           interval     = 0.005;               // 任务运行间隔 s
+    int16_t         intervalms   = interval * 1000;     // 任务运行间隔 ms
+    static uint32_t lastTime     = 0;
 
     // 反馈值
     float yawAngle, yawSpeed, pitchAngle, pitchSpeed, chassisAngle, motorYawSpeed;
@@ -93,6 +94,8 @@ void Task_Gimbal(void *Parameters) {
     float pitchAngleTarget = 0; // 目标Pitch
     float yawAngleTarget   = 0; // 目标Yaw
 
+    float  autoAimPorgress           = 0.0f;
+    float  autoAimYawTarget          = 0.0f;
     float  pitchT                    = 0;
     float  yawAngleTargetControl     = 0; // 遥控器输入
     float  pitchAngleTargetControl   = 0; // 遥控器输入
@@ -117,8 +120,8 @@ void Task_Gimbal(void *Parameters) {
     // 初始化云台PID
     PID_Init(&PID_Cloud_YawAngle, 8, 0, 0, 4000, 100);
     PID_Init(&PID_Cloud_YawSpeed, 500, 0, 50, 23000, 40);
-    PID_Init(&PID_Cloud_PitchAngle, 14, 0.1, 0, 180, 120);
-    PID_Init(&PID_Cloud_PitchSpeed, 100, 0, 0, 23000, 0);
+    PID_Init(&PID_Cloud_PitchAngle, 16, 0, 0, 4000, 120);
+    PID_Init(&PID_Cloud_PitchSpeed, 80, 0, 0, 23000, 0);
     PID_Init(&PID_Cloud_MotorYawSpeed, 3, 1, 0, 23000, 0);
 
     while (1) {
@@ -137,7 +140,7 @@ void Task_Gimbal(void *Parameters) {
         // 遥控器输入角度目标
         if (ControlMode == 1) {
             if (ABS(remoteData.rx) > 30) yawAngleTargetControl = -remoteData.rx / 660.0f * 360 * interval * 0.4;
-            if (ABS(remoteData.ry) > 30) pitchAngleTargetControl = remoteData.ry / 660.0f * 360 * interval * 0.05;
+            if (ABS(remoteData.ry) > 30) pitchAngleTargetControl = remoteData.ry / 660.0f * 360 * interval * 0.02;
         } else if (ControlMode == 2) {
             yawAngleTargetControl   = -mouseData.x * 0.5 * interval; // 0.005
             pitchAngleTargetControl = -mouseData.y * 0.2 * interval;
@@ -146,21 +149,34 @@ void Task_Gimbal(void *Parameters) {
         pitchAngleTarget += pitchAngleTargetControl;
 
         // 视觉辅助
+        yawAngleTargetPs   = ProtocolData.autoaimData.yaw_angle_diff;
         pitchAngleTargetPs = HostAutoaimData.pitch_angle_diff;
         if (PsAimEnabled) {
-            yaw_angle_diff_new = HostAutoaimData.yaw_angle_diff;
-            if (yaw_angle_diff_new / yaw_angle_diff_old < 0)
-                yawAngleTargetPs = 0.3 * yaw_angle_diff_new;
-            else
-                yawAngleTargetPs = yaw_angle_diff_new + (yaw_angle_diff_new - yaw_angle_diff_old) / intervalms * 200;
-            yaw_angle_diff_old = HostAutoaimData.yaw_angle_diff;
-            yawAngleTarget     = yawAngle + yawAngleTargetPs;
-            pitchAngleTarget   = pitchAngle + pitchAngleTargetPs;
-        } else {
-            yaw_angle_diff_new = HostAutoaimData.yaw_angle_diff;
-            yawAngleTargetPs   = HostAutoaimData.yaw_angle_diff;
-            yaw_angle_diff_old = HostAutoaimData.yaw_angle_diff;
+            if (ProtocolData.autoaimData.yaw_angle_diff != 0) {
+                yawAngleTarget                          = yawAngle + ProtocolData.autoaimData.yaw_angle_diff;
+                ProtocolData.autoaimData.yaw_angle_diff = 0;
+                autoAimPorgress                         = 0;
+            }
+            // if (autoAimPorgress < 1.0f) {
+            //     autoAimPorgress += 0.125f;
+            //     yawAngleTarget = RAMP(yawAngle, autoAimYawTarget, autoAimPorgress);
+            // }
+            // if (yaw_angle_diff_new / yaw_angle_diff_old < 0)
+            //     yawAngleTargetPs = 0.3 * yaw_angle_diff_new;
+            // else
+            //     yawAngleTargetPs = yaw_angle_diff_new + (yaw_angle_diff_new - yaw_angle_diff_old) / intervalms * 100;
+            // yaw_angle_diff_old = yaw_angle_diff_new;
+            // yawAngleTarget     = yawAngle + yawAngleTargetPs;
+            // pitchAngleTarget   = pitchAngle + pitchAngleTargetPs;
         }
+        // } else {
+        //     yaw_angle_diff_new = HostAutoaimData.yaw_angle_diff;
+
+        //     VofaData->debug4 = yaw_angle_diff_old;
+
+        //     yawAngleTargetPs   = HostAutoaimData.yaw_angle_diff;
+        //     yaw_angle_diff_old = HostAutoaimData.yaw_angle_diff;
+        // }
 
         // 限制云台运动范围即斜坡补偿
         MIAO(pitchAngleTarget, GIMBAL_PITCH_MIN + chassisAngle, GIMBAL_PITCH_MAX + chassisAngle);
@@ -213,18 +229,20 @@ void Task_Gimbal(void *Parameters) {
         // VofaData->debug0 = pitchAngleTarget;
         // VofaData->debug1 = pitchAngle;
         // VofaData->debug2 = PID_Cloud_PitchAngle.output;
-        // .->debug3 = pitchSpeed;
+        // VofaData->debug3 = pitchSpeed;
         // VofaData->debug4 = PID_Cloud_PitchSpeed.output;
 
         VofaData->debug0 = yawAngleTargetPs;
         VofaData->debug1 = yawAngle;
-        VofaData->debug2 = PID_Cloud_YawAngle.output;
-        VofaData->debug3 = yaw_angle_diff_new;
-        VofaData->debug4 = yaw_angle_diff_old;
+        VofaData->debug2 = PID_Cloud_PitchSpeed.output;
+        VofaData->debug3 = Node_Host.receiveSeq;
         VofaData->debug5 = yawAngleTarget;
         // VofaData->debug6 = Node_Host.receiveSeq;
 
         // 任务间隔
+        uint32_t time    = getSysTimeMs();
+        VofaData->debug6 = time - lastTime;
+        lastTime         = time;
         vTaskDelayUntil(&LastWakeTime, intervalms);
     }
     vTaskDelete(NULL);
@@ -408,8 +426,8 @@ void Task_Chassis(void *Parameters) {
         Chassis_Fix(&ChassisData, motorAngle);        // 修正旋转后底盘的前进方向
         Chassis_Calculate_Rotor_Speed(&ChassisData);  // 麦轮解算
 
-        PID_Calculate(&PID_Fx, vx, ChassisData.realvx);
-        PID_Calculate(&PID_Fy, vy, ChassisData.realvy);
+        PID_Calculate(&PID_Fx, ChassisData.vx, ChassisData.realvx);
+        PID_Calculate(&PID_Fy, ChassisData.vy, ChassisData.realvy);
         PID_Calculate(&PID_T, vwRamp, ChassisData.realvw);
         Chassis_Updata_FT(&ChassisData, PID_Fx.output, PID_Fy.output, PID_T.output);
         Chassis_Calculate_Rotor_Torgue(&ChassisData);

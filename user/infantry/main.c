@@ -7,7 +7,7 @@
 #include "task.h"
 #include "tasks.h"
 
-int main(void) {
+	int main(void) {
 
     // 设置中断优先级位数
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
@@ -21,10 +21,10 @@ int main(void) {
      *                                  硬件初始化                                  *
      *******************************************************************************/
     // 底盘电机
-    Motor_Init(&Motor_LF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
-    Motor_Init(&Motor_LB, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
-    Motor_Init(&Motor_RB, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
-    Motor_Init(&Motor_RF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, DISABLE);
+    Motor_Init(&Motor_LF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
+    Motor_Init(&Motor_LB, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
+    Motor_Init(&Motor_RB, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
+    Motor_Init(&Motor_RF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
 
     // 发射机构电机
     Motor_Init(&Motor_FL, 1, DISABLE, ENABLE);
@@ -91,7 +91,7 @@ int main(void) {
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x500, &Node_SuperCap);
 
     DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001, ENABLE);
-	
+
     // 陀螺仪
     // Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
 
@@ -100,7 +100,6 @@ int main(void) {
     DebugData = &(ProtocolData.debugInfo.debugData);
 
     USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
-
 
     // 安全延时
     delay_ms(500);

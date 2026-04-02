@@ -145,7 +145,7 @@ static uint16_t Vcp_DataTx(uint8_t *Buf, uint32_t Len) {
     for (int i = 0; i < Len; i++) {
         /* APP_Rx_Buffer[APP_Rx_ptr_in] = XXX_ReceiveData(XXX); */
     }
-
+		
     /* Increment the in pointer */
     APP_Rx_ptr_in++;
 
@@ -174,12 +174,15 @@ static uint16_t Vcp_DataTx(uint8_t *Buf, uint32_t Len) {
  */
 static uint16_t Vcp_DataRx(uint8_t *Buf, uint32_t Len) {
     uint32_t i;
-
+    // static uint32_t lastSystemTime;
     /* Send the received buffer */
     Node_Host.isFirstByte = 1; // @todo: 了解USART DMA的工作方式, 更新该变量
     for (i = 0; i < Len; i++) {
         Protocol_Unpack(&Node_Host, Buf[i]);
     }
+
+    // VofaData->debug6 = getSysTimeMs() - lastSystemTime;
+    // lastSystemTime   = getSysTimeMs();
 
     return USBD_OK;
 }
