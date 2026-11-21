@@ -7,7 +7,7 @@
 #include "task.h"
 #include "tasks.h"
 
-	int main(void) {
+int main(void) {
 
     // 设置中断优先级位数
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
@@ -27,9 +27,9 @@
     Motor_Init(&Motor_RF, CHASSIS_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
 
     // 发射机构电机
-    Motor_Init(&Motor_FL, 1, DISABLE, ENABLE);
-    Motor_Init(&Motor_FR, 1, DISABLE, ENABLE);
-    Motor_Init(&Motor_FT, 1, DISABLE, ENABLE);
+    Motor_Init(&Motor_FL, 1, DISABLE, DISABLE);
+    Motor_Init(&Motor_FR, 1, DISABLE, DISABLE);
+    Motor_Init(&Motor_FT, 1, DISABLE, DISABLE);
 
     // 云台电机
     Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
@@ -68,7 +68,7 @@
     BSP_PWM_Init(&PWM_Magazine_Servo, 9000, 200, TIM_OCPolarity_Low);
 
     // Calibration
-    Motor_Set_Angle_Bias(&Motor_Yaw, 209.619141);
+    Motor_Set_Angle_Bias(&Motor_Yaw, 190.239258);
     Motor_Set_Angle_Bias(&Motor_Pitch, -9.79);
     // Gyroscope_Set_Bias(&ImuData, 30, 4, -7);
 
@@ -90,10 +90,10 @@
     Bridge_Bind(&BridgeData, USART_BRIDGE, 6, &Node_Debug);
     Bridge_Bind(&BridgeData, CAN1_BRIDGE, 0x500, &Node_SuperCap);
 
-    DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001, ENABLE);
+    // DM_Motor_Init(&Motor_Stir, MODE_MIT, 0x001, ENABLE);
 
     // 陀螺仪
-    // Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
+    //Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
 
     // 绑定debug指针
     VofaData  = &(ProtocolData.debugInfo.vofaData);
@@ -117,7 +117,7 @@
     xTaskCreate(Task_Control, "Task_Control", 400, NULL, 6, NULL);
 
     // // Can发送任务
-    xTaskCreate(Task_Can_Send, "Task_Can_Send", 500, NULL, 4, NULL);
+    xTaskCreate(Task_Can_Send, "Task_Can_Send", 500, NULL, 6, NULL);
 
     // // 运动控制任务
     xTaskCreate(Task_Chassis, "Task_Chassis", 400, NULL, 5, NULL);

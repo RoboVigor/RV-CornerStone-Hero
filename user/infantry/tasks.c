@@ -72,8 +72,8 @@ void Task_Can_Send(void *Parameters) {
     int        intervalms   = interval * 1000;     // 任务运行间隔 ms
     while (1) {
         Bridge_Send_Motor(&BridgeData, SafetyMode);
-        DM_Motor_Control(&Motor_Stir);
-        // DM_Motor_Read_Param(&Motor_Stir, 0x0A);
+        // DM_Motor_Control(&Motor_Stir);
+        //  DM_Motor_Read_Param(&Motor_Stir, 0x0A);
         vTaskDelayUntil(&LastWakeTime, intervalms); // 发送频率
     }
     vTaskDelete(NULL);

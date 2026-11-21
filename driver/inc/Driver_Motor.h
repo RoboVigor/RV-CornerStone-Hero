@@ -22,8 +22,8 @@ typedef struct {
     int16_t  lastPosition;  // 上一次的转子位置
     int16_t  positionDiff;  // 转子位置差值
     int16_t  speed;         // 转子转速值, RPM
-    float    actualCurrent; //电流
-    int16_t  temperature;   //温度
+    float    actualCurrent; // 电流
+    int16_t  temperature;   // 温度
     uint16_t updatedAt;     // 更新电机数据时的tickCount
     uint8_t  online;        // 电机是否离线
 

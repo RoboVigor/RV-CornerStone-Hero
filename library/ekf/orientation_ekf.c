@@ -25,7 +25,7 @@ OrientationEKF ekf;
 
 /**
  * @brief Initialize the Orientation EKF structure.
- * 
+ *
  * This function sets up the initial state of the Extended Kalman Filter (EKF),
  * including covariance matrices, state vectors, and rotation matrices.
  * It also initializes the reference gravity and magnetic north vectors.
@@ -35,11 +35,11 @@ OrientationEKF ekf;
 void OrientationEKF_Init(OrientationEKF *ekf) {
     Matrix3x3d_setIdentity(&ekf->so3SensorFromWorld);
     Matrix3x3d_setIdentity(&ekf->so3LastMotion);
-    
-    Matrix3x3d_setSameDiagonal(&ekf->mP, MP_INIT_VALUE * MP_INIT_VALUE);       // Initial process covariance
-    Matrix3x3d_setSameDiagonal(&ekf->mQ, MQ_INIT_VALUE * MQ_INIT_VALUE);         // Process noise covariance
-    Matrix3x3d_setSameDiagonal(&ekf->mR, MR_INIT_VALUE * MR_INIT_VALUE);       // Measurement noise covariance
-    Matrix3x3d_setSameDiagonal(&ekf->mRaccel, MRACCEL_INIT_VALUE * MRACCEL_INIT_VALUE);  // Accelerometer noise covariance
+
+    Matrix3x3d_setSameDiagonal(&ekf->mP, MP_INIT_VALUE * MP_INIT_VALUE);                // Initial process covariance
+    Matrix3x3d_setSameDiagonal(&ekf->mQ, MQ_INIT_VALUE * MQ_INIT_VALUE);                // Process noise covariance
+    Matrix3x3d_setSameDiagonal(&ekf->mR, MR_INIT_VALUE * MR_INIT_VALUE);                // Measurement noise covariance
+    Matrix3x3d_setSameDiagonal(&ekf->mRaccel, MRACCEL_INIT_VALUE * MRACCEL_INIT_VALUE); // Accelerometer noise covariance
 
     Matrix3x3d_zero(&ekf->mS);
     Matrix3x3d_zero(&ekf->mH);
@@ -56,13 +56,13 @@ void OrientationEKF_Init(OrientationEKF *ekf) {
     // Reference north (Y-axis)
     Vector3d_set(&ekf->north, 0.0f, 1.0f, 0.0f);
 
-    ekf->alignedToGravity = 0;
-    ekf->alignedToNorth = 0;
-    ekf->previousAccelNorm = 0.0f;
+    ekf->alignedToGravity             = 0;
+    ekf->alignedToNorth               = 0;
+    ekf->previousAccelNorm            = 0.0f;
     ekf->movingAverageAccelNormChange = 0.0f;
-    ekf->timestepFilterInit = 0;
-    ekf->numGyroTimestepSamples = 0;
-    ekf->gyroFilterValid = 1;
+    ekf->timestepFilterInit           = 0;
+    ekf->numGyroTimestepSamples       = 0;
+    ekf->gyroFilterValid              = 1;
 }
 
 /**
@@ -75,21 +75,18 @@ void OrientationEKF_Init(OrientationEKF *ekf) {
  * @param currentAccelNorm Current magnitude of the acceleration vector.
  */
 
-void updateAccelCovariance(float currentAccelNorm)
-{
+void updateAccelCovariance(float currentAccelNorm) {
     float currentAccelNormChange = fabsf(currentAccelNorm - ekf.previousAccelNorm);
-    ekf.previousAccelNorm = currentAccelNorm;
+    ekf.previousAccelNorm        = currentAccelNorm;
 
-    const float kSmoothingFactor = 0.5f;
-    ekf.movingAverageAccelNormChange =
-        kSmoothingFactor * currentAccelNormChange + (1 - kSmoothingFactor) * ekf.movingAverageAccelNormChange;
+    const float kSmoothingFactor     = 0.5f;
+    ekf.movingAverageAccelNormChange = kSmoothingFactor * currentAccelNormChange + (1 - kSmoothingFactor) * ekf.movingAverageAccelNormChange;
 
     const float kMaxAccelNormChange = 0.15f;
-    float normChangeRatio = ekf.movingAverageAccelNormChange / kMaxAccelNormChange;
-    normChangeRatio = normChangeRatio > 1.0f ? 1.0f : (normChangeRatio < 0.0f ? 0.0f : normChangeRatio);
+    float       normChangeRatio     = ekf.movingAverageAccelNormChange / kMaxAccelNormChange;
+    normChangeRatio                 = normChangeRatio > 1.0f ? 1.0f : (normChangeRatio < 0.0f ? 0.0f : normChangeRatio);
 
-    float accelNoiseSigma = MIN_ACCEL_NOISE_SIGMA +
-                            normChangeRatio * (MAX_ACCEL_NOISE_SIGMA - MIN_ACCEL_NOISE_SIGMA);
+    float accelNoiseSigma = MIN_ACCEL_NOISE_SIGMA + normChangeRatio * (MAX_ACCEL_NOISE_SIGMA - MIN_ACCEL_NOISE_SIGMA);
 
     Matrix3x3d_setSameDiagonal(&ekf.mRaccel, accelNoiseSigma * accelNoiseSigma);
 }
@@ -104,15 +101,14 @@ void updateAccelCovariance(float currentAccelNorm)
  */
 void filterGyroTimestep(float timeStep) {
     const float kFilterCoeff = 0.95f;
-    const float kMinSamples = 10.0f;
+    const float kMinSamples  = 10.0f;
 
     if (!ekf.timestepFilterInit) {
-        ekf.filteredGyroTimestep = timeStep;
+        ekf.filteredGyroTimestep   = timeStep;
         ekf.numGyroTimestepSamples = 1;
-        ekf.timestepFilterInit = 1;
+        ekf.timestepFilterInit     = 1;
     } else {
-        ekf.filteredGyroTimestep =
-            kFilterCoeff * ekf.filteredGyroTimestep + (1.0f - kFilterCoeff) * timeStep;
+        ekf.filteredGyroTimestep = kFilterCoeff * ekf.filteredGyroTimestep + (1.0f - kFilterCoeff) * timeStep;
 
         if (++ekf.numGyroTimestepSamples > kMinSamples) {
             ekf.gyroFilterValid = 1;
@@ -123,8 +119,7 @@ void filterGyroTimestep(float timeStep) {
 /**
  * @brief Update covariance matrix after applying gyroscope motion model.
  */
-void updateCovariancesAfterMotion() 
-{
+void updateCovariancesAfterMotion() {
     Matrix3x3d_transposeTo(&ekf.so3LastMotion, &ekf.updateCovariancesAfterMotionTempM1);
     Matrix3x3d_mult(&ekf.mP, &ekf.updateCovariancesAfterMotionTempM1, &ekf.updateCovariancesAfterMotionTempM2);
     Matrix3x3d_mult(&ekf.so3LastMotion, &ekf.updateCovariancesAfterMotionTempM2, &ekf.mP);
@@ -174,7 +169,7 @@ void magObservationFunctionForNumericalJacobian(const Matrix3x3d *so3SensorFromW
  */
 void OrientationEKF_UpdateGyro(OrientationEKF *ekf, const Vector3d *gyro, uint64_t timestampNs) {
     const float kTimeThreshold = 0.016f;
-    const float kdTdefault = 0.004f;
+    const float kdTdefault     = 0.004f;
 
     if (ekf->sensorTimeStampGyro != 0) {
         float dT = (timestampNs - ekf->sensorTimeStampGyro) * 1e-9f;
@@ -197,8 +192,8 @@ void OrientationEKF_UpdateGyro(OrientationEKF *ekf, const Vector3d *gyro, uint64
 
         updateCovariancesAfterMotion();
 
-        ekf->processGyroTempM2 = ekf->mQ;  
-        Matrix3x3d_scale(&ekf->processGyroTempM2, dT * dT);   
+        ekf->processGyroTempM2 = ekf->mQ;
+        Matrix3x3d_scale(&ekf->processGyroTempM2, dT * dT);
         Matrix3x3d_plusEquals(&ekf->mP, &ekf->processGyroTempM2);
     }
 
@@ -219,7 +214,7 @@ void OrientationEKF_UpdateGyro(OrientationEKF *ekf, const Vector3d *gyro, uint64
 void OrientationEKF_UpdateAccel(OrientationEKF *ekf, const Vector3d *acc, uint64_t timestampNs) {
     // Normalize acceleration vector (gravity direction)
     Vector3d_set(&ekf->mz, acc->x, acc->y, acc->z);
-    float norm = sqrt(acc->x*acc->x + acc->y*acc->y + acc->z*acc->z);
+    float norm = sqrt(acc->x * acc->x + acc->y * acc->y + acc->z * acc->z);
     updateAccelCovariance(norm);
 
     if (ekf->alignedToGravity) {
@@ -275,8 +270,7 @@ void OrientationEKF_UpdateAccel(OrientationEKF *ekf, const Vector3d *acc, uint64
  * @param timestampNs Current timestamp in nanoseconds.
  */
 void OrientationEKF_UpdateMag(OrientationEKF *ekf, const Vector3d *mag, uint64_t timestampNs) {
-    if (ekf->alignedToGravity)
-    {
+    if (ekf->alignedToGravity) {
         Vector3d_set(&ekf->mz, mag->x, mag->y, mag->z);
         Vector3d_normalize(&ekf->mz);
 
@@ -288,8 +282,7 @@ void OrientationEKF_UpdateMag(OrientationEKF *ekf, const Vector3d *mag, uint64_t
         Vector3d_normalize(&ekf->processMagTempV2);
         Vector3d_set(&ekf->mz, ekf->processMagTempV2.x, ekf->processMagTempV2.y, ekf->processMagTempV2.z);
 
-        if (ekf->alignedToNorth)
-        {
+        if (ekf->alignedToNorth) {
             magObservationFunctionForNumericalJacobian(&ekf->so3SensorFromWorld, &ekf->mNu);
             const float eps = 1E-7f;
             for (int dof = 0; dof < 3; ++dof) {
@@ -322,8 +315,7 @@ void OrientationEKF_UpdateMag(OrientationEKF *ekf, const Vector3d *mag, uint64_t
             Matrix3x3d_mult(&ekf->so3LastMotion, &ekf->so3SensorFromWorld, &ekf->processMagTempM4);
             ekf->so3SensorFromWorld = ekf->processMagTempM4;
             updateCovariancesAfterMotion();
-        }else
-        {
+        } else {
             magObservationFunctionForNumericalJacobian(&ekf->so3SensorFromWorld, &ekf->mNu);
             So3Helper_sO3FromMu(&ekf->mNu, &ekf->so3LastMotion);
             Matrix3x3d_mult(&ekf->so3LastMotion, &ekf->so3SensorFromWorld, &ekf->processMagTempM4);
@@ -340,25 +332,25 @@ void OrientationEKF_UpdateMag(OrientationEKF *ekf, const Vector3d *mag, uint64_t
  * @param quanterion Input quaternion array [qw, qx, qy, qz].
  * @param rpy Output array for roll, pitch, yaw angles (in radians).
  */
-void OrientationEKF_GetRPY(const float* quanterion, float *rpy) {
-    float qw = quanterion[0];
-    float qx = quanterion[1];
-    float qy = quanterion[2];
-    float qz = quanterion[3];
-    float *roll = rpy;
+void OrientationEKF_GetRPY(const float *quanterion, float *rpy) {
+    float  qw    = quanterion[0];
+    float  qx    = quanterion[1];
+    float  qy    = quanterion[2];
+    float  qz    = quanterion[3];
+    float *roll  = rpy;
     float *pitch = rpy + 1;
-    float *yaw = rpy + 2;
+    float *yaw   = rpy + 2;
 
     float sinr_cosp = 2.0f * (qw * qx + qy * qz);
     float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-    *roll = atan2(sinr_cosp, cosr_cosp);
+    *roll           = atan2(sinr_cosp, cosr_cosp);
 
     float sinp = 2.0f * (qw * qy - qz * qx);
-    *pitch = asin(sinp);
+    *pitch     = asin(sinp);
 
     float siny_cosp = 2.0f * (qw * qz + qx * qy);
     float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-    *yaw = atan2(siny_cosp, cosy_cosp);
+    *yaw            = atan2(siny_cosp, cosy_cosp);
 }
 
 /**
@@ -367,46 +359,49 @@ void OrientationEKF_GetRPY(const float* quanterion, float *rpy) {
  * @param ekf Pointer to EKF instance.
  * @param qw,qx,qy,qz Output quaternion components.
  */
-void OrientationEKF_GetQuaternion(OrientationEKF *ekf, float * quaternion) {
-    Matrix3x3d R; 
+void OrientationEKF_GetQuaternion(OrientationEKF *ekf, float *quaternion) {
+    Matrix3x3d R;
     Matrix3x3d_transposeTo(&ekf->so3SensorFromWorld, &R);
-    float* qw = quaternion;
-    float* qx = quaternion + 1;
-    float* qy = quaternion + 2;
-    float* qz = quaternion + 3;
-    float trace = R.m[0][0] + R.m[1][1] + R.m[2][2];
-    if(trace > 0.0f){
+    float *qw    = quaternion;
+    float *qx    = quaternion + 1;
+    float *qy    = quaternion + 2;
+    float *qz    = quaternion + 3;
+    float  trace = R.m[0][0] + R.m[1][1] + R.m[2][2];
+    if (trace > 0.0f) {
         float s = 0.5f / sqrt(trace + 1.0f);
-        *qw = 0.25f / s;
-        *qx = (R.m[2][1] - R.m[1][2]) * s;
-        *qy = (R.m[0][2] - R.m[2][0]) * s;
-        *qz = (R.m[1][0] - R.m[0][1]) * s;
-    } else if(R.m[0][0] > R.m[1][1] && R.m[0][0] > R.m[2][2]){
+        *qw     = 0.25f / s;
+        *qx     = (R.m[2][1] - R.m[1][2]) * s;
+        *qy     = (R.m[0][2] - R.m[2][0]) * s;
+        *qz     = (R.m[1][0] - R.m[0][1]) * s;
+    } else if (R.m[0][0] > R.m[1][1] && R.m[0][0] > R.m[2][2]) {
         float s = 2.0f * sqrt(1.0f + R.m[0][0] - R.m[1][1] - R.m[2][2]);
-        *qw = (R.m[2][1] - R.m[1][2]) / s;
-        *qx = 0.25f * s;
-        *qy = (R.m[0][1] + R.m[1][0]) / s;
-        *qz = (R.m[0][2] + R.m[2][0]) / s;
-    } else if(R.m[1][1] > R.m[2][2]){
+        *qw     = (R.m[2][1] - R.m[1][2]) / s;
+        *qx     = 0.25f * s;
+        *qy     = (R.m[0][1] + R.m[1][0]) / s;
+        *qz     = (R.m[0][2] + R.m[2][0]) / s;
+    } else if (R.m[1][1] > R.m[2][2]) {
         float s = 2.0f * sqrt(1.0f + R.m[1][1] - R.m[0][0] - R.m[2][2]);
-        *qw = (R.m[0][2] - R.m[2][0]) / s;
-        *qx = (R.m[0][1] + R.m[1][0]) / s;
-        *qy = 0.25f * s;
-        *qz = (R.m[1][2] + R.m[2][1]) / s;
+        *qw     = (R.m[0][2] - R.m[2][0]) / s;
+        *qx     = (R.m[0][1] + R.m[1][0]) / s;
+        *qy     = 0.25f * s;
+        *qz     = (R.m[1][2] + R.m[2][1]) / s;
     } else {
         float s = 2.0f * sqrt(1.0f + R.m[2][2] - R.m[0][0] - R.m[1][1]);
-        *qw = (R.m[1][0] - R.m[0][1]) / s;
-        *qx = (R.m[0][2] + R.m[2][0]) / s;
-        *qy = (R.m[1][2] + R.m[2][1]) / s;
-        *qz = 0.25f * s;
+        *qw     = (R.m[1][0] - R.m[0][1]) / s;
+        *qx     = (R.m[0][2] + R.m[2][0]) / s;
+        *qy     = (R.m[1][2] + R.m[2][1]) / s;
+        *qz     = 0.25f * s;
     }
 
     // Normalize quaternion to avoid numerical drift
-    float qnorm = sqrt((*qw)*(*qw) + (*qx)*(*qx) + (*qy)*(*qy) + (*qz)*(*qz));
+    float qnorm = sqrt((*qw) * (*qw) + (*qx) * (*qx) + (*qy) * (*qy) + (*qz) * (*qz));
     if (qnorm > 1e-6f) {
-        *qw /= qnorm; *qx /= qnorm; *qy /= qnorm; *qz /= qnorm;
+        *qw /= qnorm;
+        *qx /= qnorm;
+        *qy /= qnorm;
+        *qz /= qnorm;
     } else {
-        *qw = 1.0f; *qx = *qy = *qz = 0.0f;
+        *qw = 1.0f;
+        *qx = *qy = *qz = 0.0f;
     }
-
 }

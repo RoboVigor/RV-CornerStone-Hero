@@ -1,2 +1,4 @@
-Load "c:\\Users\\wangl\\Desktop\\RV-CornerStone-omnidirectional-wheel\\template\\mdk\\Objects\\Belief exp2.axf" 
-Erase Done.Programming Done.Verify OK.Flash Load finished at 18:27:31
+*** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Users\wangl\AppData\Local\Keil_v5\ARM\ARM_Compiler_5.06u7\Bin'
+Build target 'Target 1'
+Note: source file '..\user\infantry\tasks.c' - object file renamed from '.\Objects\tasks.o' to '.\Objects\tasks_1.o'.".\Objects\Belief exp2.axf" - 0 Error(s), 0 Warning(s).
+Build Time Elapsed:  00:00:02
