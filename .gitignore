@@ -8,3 +8,7 @@ mdk/*.lst
 user/.DS_Store
 *.exe
 script/.vscode/*
+
+# GCC/CMake build output
+build/
+build-*/
