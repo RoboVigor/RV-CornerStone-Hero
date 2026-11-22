@@ -89,6 +89,14 @@ typedef struct {
 
     uint8_t switchLeft; // 3 value
     uint8_t switchRight;
+    
+    // Compatability
+    uint8_t     gearSwitch; // default the remote mode.
+    Button_Type buttonPause;
+    Button_Type buttonLeft;
+    Button_Type buttonRight;
+    int16_t     dial; // 11位
+    uint8_t     trigger;
 
 #else
     // VT13图传解码数据存储结构体

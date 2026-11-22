@@ -17,7 +17,6 @@ void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse) {
 
     kb->keyCode = 0;
 
-#ifndef CONTROLLED_BY_DBUS
     remote->buttonPause.state     = OFF;
     remote->buttonPause.laststate = OFF;
     remote->buttonPause.isPressed = OFF;
@@ -27,11 +26,13 @@ void Remote_Init(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse) {
     remote->buttonRight.state     = OFF;
     remote->buttonRight.laststate = OFF;
     remote->buttonRight.isPressed = OFF;
-#endif
 }
 
 void Remote_Update(Remote_Type *remote, Keyboard_Type *kb, Mouse_Type *mouse, uint8_t RemoteBuffer[]) {
 #ifdef CONTROLLED_BY_DBUS
+    // For compatibility
+    remote->gearSwitch = 1;
+
     int i;
     remote->state = RemoteWorking;
 
