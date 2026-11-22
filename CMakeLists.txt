@@ -18,6 +18,12 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
 endif()
 
+# Ninja pipes compiler output, so GCC disables color by itself; force it back on.
+# Override with -DCMAKE_COLOR_DIAGNOSTICS=OFF (e.g. for CI logs).
+if(NOT DEFINED CMAKE_COLOR_DIAGNOSTICS)
+    set(CMAKE_COLOR_DIAGNOSTICS ON)
+endif()
+
 project(infantry C ASM)
 
 set(UVPROJX ${CMAKE_CURRENT_SOURCE_DIR}/mdk/infantry.uvprojx)

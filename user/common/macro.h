@@ -14,7 +14,7 @@
 #define RPS2DPS 57.2957804f // 180.0f / 3.1415926f,    rad/s    ->degree/s
 
 // 控制方式
-// define CONTROLLED_BY_DBUS
+// #define CONTROLLED_BY_DBUS
 
 #ifdef CONTROLLED_BY_DBUS
 #define REMOTE_BAUD_RATE  100000
