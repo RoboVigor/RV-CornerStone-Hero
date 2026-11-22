@@ -12,3 +12,7 @@ script/.vscode/*
 # GCC/CMake build output
 build/
 build-*/
+.cache/
+
+# MacOS store files
+.DS_Store
