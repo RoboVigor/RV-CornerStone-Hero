@@ -23,6 +23,13 @@ OrientationEKF ekf;
 #define MR_INIT_VALUE 1.f
 #define MRACCEL_INIT_VALUE 0.75f
 
+// 加速度计观测数值雅可比的扰动步长
+// 原 1E-7f 移植自双精度实现; 单精度下 1 附近的最小分辨率约 1.2e-7, 扰动会被舍入吞掉, 雅可比误差可达数十%
+// 单精度前向差分的最优步长约 sqrt(FLT_EPSILON) = 3.45e-4
+#ifndef EKF_ACC_JACOBIAN_STEP
+#define EKF_ACC_JACOBIAN_STEP 3e-4f
+#endif
+
 /**
  * @brief Initialize the Orientation EKF structure.
  *
@@ -214,7 +221,7 @@ void OrientationEKF_UpdateGyro(OrientationEKF *ekf, const Vector3d *gyro, uint64
 void OrientationEKF_UpdateAccel(OrientationEKF *ekf, const Vector3d *acc, uint64_t timestampNs) {
     // Normalize acceleration vector (gravity direction)
     Vector3d_set(&ekf->mz, acc->x, acc->y, acc->z);
-    float norm = sqrt(acc->x * acc->x + acc->y * acc->y + acc->z * acc->z);
+    float norm = sqrtf(acc->x * acc->x + acc->y * acc->y + acc->z * acc->z);
     updateAccelCovariance(norm);
 
     if (ekf->alignedToGravity) {
@@ -222,12 +229,12 @@ void OrientationEKF_UpdateAccel(OrientationEKF *ekf, const Vector3d *acc, uint64
         accObservationFunctionForNumericalJacobian(&ekf->so3SensorFromWorld, &ekf->mNu);
         for (int dof = 0; dof < 3; dof++) {
             Vector3d_setZero(&ekf->processAccVDelta);
-            Vector3d_setComponent(&ekf->processAccVDelta, dof, 1E-7f);
+            Vector3d_setComponent(&ekf->processAccVDelta, dof, EKF_ACC_JACOBIAN_STEP);
             So3Helper_sO3FromMu(&ekf->processAccVDelta, &ekf->processAccTempM1);
             Matrix3x3d_mult(&ekf->processAccTempM1, &ekf->so3SensorFromWorld, &ekf->processAccTempM2);
             accObservationFunctionForNumericalJacobian(&ekf->processAccTempM2, &ekf->processAccTempV1);
             Vector3d_sub(&ekf->mNu, &ekf->processAccTempV1, &ekf->processAccTempV2);
-            Vector3d_scale(&ekf->processAccTempV2, 1.0f / EPSILON);
+            Vector3d_scale(&ekf->processAccTempV2, 1.0f / EKF_ACC_JACOBIAN_STEP);
             Matrix3x3d_setColumn(&ekf->mH, dof, &ekf->processAccTempV2);
         }
 
@@ -343,14 +350,14 @@ void OrientationEKF_GetRPY(const float *quanterion, float *rpy) {
 
     float sinr_cosp = 2.0f * (qw * qx + qy * qz);
     float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-    *roll           = atan2(sinr_cosp, cosr_cosp);
+    *roll           = atan2f(sinr_cosp, cosr_cosp);
 
     float sinp = 2.0f * (qw * qy - qz * qx);
-    *pitch     = asin(sinp);
+    *pitch     = asinf(sinp);
 
     float siny_cosp = 2.0f * (qw * qz + qx * qy);
     float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-    *yaw            = atan2(siny_cosp, cosy_cosp);
+    *yaw            = atan2f(siny_cosp, cosy_cosp);
 }
 
 /**
@@ -368,25 +375,25 @@ void OrientationEKF_GetQuaternion(OrientationEKF *ekf, float *quaternion) {
     float *qz    = quaternion + 3;
     float  trace = R.m[0][0] + R.m[1][1] + R.m[2][2];
     if (trace > 0.0f) {
-        float s = 0.5f / sqrt(trace + 1.0f);
+        float s = 0.5f / sqrtf(trace + 1.0f);
         *qw     = 0.25f / s;
         *qx     = (R.m[2][1] - R.m[1][2]) * s;
         *qy     = (R.m[0][2] - R.m[2][0]) * s;
         *qz     = (R.m[1][0] - R.m[0][1]) * s;
     } else if (R.m[0][0] > R.m[1][1] && R.m[0][0] > R.m[2][2]) {
-        float s = 2.0f * sqrt(1.0f + R.m[0][0] - R.m[1][1] - R.m[2][2]);
+        float s = 2.0f * sqrtf(1.0f + R.m[0][0] - R.m[1][1] - R.m[2][2]);
         *qw     = (R.m[2][1] - R.m[1][2]) / s;
         *qx     = 0.25f * s;
         *qy     = (R.m[0][1] + R.m[1][0]) / s;
         *qz     = (R.m[0][2] + R.m[2][0]) / s;
     } else if (R.m[1][1] > R.m[2][2]) {
-        float s = 2.0f * sqrt(1.0f + R.m[1][1] - R.m[0][0] - R.m[2][2]);
+        float s = 2.0f * sqrtf(1.0f + R.m[1][1] - R.m[0][0] - R.m[2][2]);
         *qw     = (R.m[0][2] - R.m[2][0]) / s;
         *qx     = (R.m[0][1] + R.m[1][0]) / s;
         *qy     = 0.25f * s;
         *qz     = (R.m[1][2] + R.m[2][1]) / s;
     } else {
-        float s = 2.0f * sqrt(1.0f + R.m[2][2] - R.m[0][0] - R.m[1][1]);
+        float s = 2.0f * sqrtf(1.0f + R.m[2][2] - R.m[0][0] - R.m[1][1]);
         *qw     = (R.m[1][0] - R.m[0][1]) / s;
         *qx     = (R.m[0][2] + R.m[2][0]) / s;
         *qy     = (R.m[1][2] + R.m[2][1]) / s;
@@ -394,7 +401,7 @@ void OrientationEKF_GetQuaternion(OrientationEKF *ekf, float *quaternion) {
     }
 
     // Normalize quaternion to avoid numerical drift
-    float qnorm = sqrt((*qw) * (*qw) + (*qx) * (*qx) + (*qy) * (*qy) + (*qz) * (*qz));
+    float qnorm = sqrtf((*qw) * (*qw) + (*qx) * (*qx) + (*qy) * (*qy) + (*qz) * (*qz));
     if (qnorm > 1e-6f) {
         *qw /= qnorm;
         *qx /= qnorm;

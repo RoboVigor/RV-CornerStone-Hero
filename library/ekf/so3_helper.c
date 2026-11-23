@@ -48,7 +48,7 @@ static void rodriguesSo3Exp_impl(const Vector3d *w, float kA, float kB, Matrix3x
  */
 void So3Helper_sO3FromMu(const Vector3d *w, Matrix3x3d *result) {
     float thetaSq = Vector3d_dot(w, w);
-    float theta = sqrt(thetaSq);
+    float theta = sqrtf(thetaSq);
     float kA, kB;
 
     if (thetaSq < 1e-8f) {  // Small angle approximation
@@ -59,8 +59,8 @@ void So3Helper_sO3FromMu(const Vector3d *w, Matrix3x3d *result) {
         kA = 1.0f - thetaSq * 0.1666666716337204f * (1.0f - 0.1666666716337204f * thetaSq);
     } else {
         float invTheta = 1.0f / theta;
-        kA = sin(theta) * invTheta;
-        kB = (1.0f - cos(theta)) * (invTheta * invTheta);
+        kA = sinf(theta) * invTheta;
+        kB = (1.0f - cosf(theta)) * (invTheta * invTheta);
     }
     rodriguesSo3Exp_impl(w, kA, kB, result);
 }
@@ -77,7 +77,7 @@ void So3Helper_rotationPiAboutAxis(const Vector3d *v, Matrix3x3d *result) {
         Matrix3x3d_setIdentity(result);
         return;
     }
-    Vector3d_scale(&tmp, M_PI / len);
+    Vector3d_scale(&tmp, (float) M_PI / len);
     rodriguesSo3Exp_impl(&tmp, 0.0f, 0.20264236728467558, result);
 }
 
@@ -138,12 +138,12 @@ void So3Helper_muFromSO3(const Matrix3x3d *so3, Vector3d *result) {
 
     if (cosAngle > 0.7071067811865476f) {  // small angle
         if (sinAngleAbs > 0.0f)
-            Vector3d_scale(result, asin(sinAngleAbs) / sinAngleAbs);
+            Vector3d_scale(result, asinf(sinAngleAbs) / sinAngleAbs);
     } else if (cosAngle > -0.7071067811865476f) {
-        float angle = acos(cosAngle);
+        float angle = acosf(cosAngle);
         Vector3d_scale(result, angle / sinAngleAbs);
     } else {
-        float angle = M_PI - asin(sinAngleAbs);
+        float angle = (float) M_PI - asinf(sinAngleAbs);
         float d0 = Matrix3x3d_get(so3,0,0) - cosAngle;
         float d1 = Matrix3x3d_get(so3,1,1) - cosAngle;
         float d2 = Matrix3x3d_get(so3,2,2) - cosAngle;

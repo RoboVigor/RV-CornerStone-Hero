@@ -80,6 +80,22 @@ Gyroscope_Update(GyroscopeData_Type *GyroscopeData);
 void Gyroscope_Solve(GyroscopeData_Type *GyroscopeData);
 
 /**
+ * @brief 上电静态零偏校准是否完成
+ */
+uint8_t Gyroscope_Is_Calibrated(void);
+
+// 调参计时 (DWT 周期数), 在 Gyroscope_Update 中更新
+extern volatile uint32_t GyroReadCycles;
+extern volatile uint32_t GyroSolveCycles;
+extern volatile uint32_t GyroReadFailCount;
+extern volatile uint32_t GyroGlitchCount;
+#define GYRO_SEG_NUM 6
+extern volatile uint32_t GyroSegCycles[GYRO_SEG_NUM];
+extern volatile float GyroCalibIntegralY;
+extern volatile float GyroCalibAccTilt;
+extern volatile float GyroCalibRateY;
+
+/**
  * @brief 获得滤波器diff
  */
 float Gyroscope_Get_Filter_Diff(void);

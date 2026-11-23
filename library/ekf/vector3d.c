@@ -55,7 +55,7 @@ void Vector3d_scale(Vector3d *v, float s) {
  * @return The vector’s length.
  */
 float Vector3d_length(const Vector3d *v) {
-    return sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+    return sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
 }
 
 /**

@@ -33,7 +33,7 @@ int main(void) {
 
     // 云台电机
     Motor_Init(&Motor_Yaw, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
-    Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, ENABLE);
+    Motor_Init(&Motor_Pitch, GIMBAL_MOTOR_REDUCTION_RATE, ENABLE, DISABLE); // pitch 由 Task_Gimbal 直接发送 CAN, 不经 Bridge_Send_Motor
 
     // 遥控器数据初始化
     Remote_Init(&remoteData, &keyboardData, &mouseData);
@@ -61,7 +61,7 @@ int main(void) {
     // USART
     // BSP_UART7_Init(115200, USART_IT_IDLE);
     BSP_UART8_Init(115200, USART_IT_IDLE);
-    BSP_USART6_Init(115200, USART_IT_IDLE);
+    BSP_USART6_Init(460800, USART_IT_IDLE); // VOFA: 115200 -> 460800, 每帧 0.69ms (921600 时 USB 串口会丢字节)
 
     // Servo
     BSP_PWM_Set_Port(&PWM_Magazine_Servo, PWM_PH10);
@@ -96,7 +96,7 @@ int main(void) {
     //Gyroscope_Init(&Gyroscope_EulerData, 300); // 初始化
 
     // 绑定debug指针
-    VofaData  = &(ProtocolData.debugInfo.vofaData);
+    VofaData  = &VofaShadow; // 影子缓冲, 防止 DMA 发送时帧被撕裂
     DebugData = &(ProtocolData.debugInfo.debugData);
 
     USBD_Init(&usbDevice, USB_OTG_FS_CORE_ID, &USR_desc, &USBD_CDC_cb, &USR_cb);
@@ -121,7 +121,7 @@ int main(void) {
 
     // // 运动控制任务
     xTaskCreate(Task_Chassis, "Task_Chassis", 400, NULL, 5, NULL);
-    xTaskCreate(Task_Gimbal, "Task_Gimbal", 500, NULL, 5, NULL);
+    xTaskCreate(Task_Gimbal, "Task_Gimbal", 500, NULL, 5, &TaskHandle_Gimbal);
     xTaskCreate(Task_Fire_Stir, "Task_Fire_Stir", 400, NULL, 6, NULL);
     xTaskCreate(Task_Fire_Frict, "Task_Fire_Frict", 400, NULL, 6, NULL);
     // xTaskCreate(Task_Wait,"Task_Wait",400,NULL,5,NULL);
@@ -130,7 +130,7 @@ int main(void) {
     xTaskCreate(Task_Host, "Task_Host", 500, NULL, 4, NULL);
 
     // IMU任务
-    xTaskCreate(Task_Imu, "Task_Imu", 400, NULL, 6, NULL);
+    xTaskCreate(Task_Imu, "Task_Imu", 400, NULL, 7, NULL); // 最高优先级: 避免被同优先级任务时间片打断
 
     // 定义协议发送频率
     // Bridge_Send_Protocol(&Node_Host, 0x120, 1);  // 心跳包
@@ -138,7 +138,7 @@ int main(void) {
 
     // debug发送
     // Bridge_Send_Protocol(&Node_Debug, 0x1024, 200);
-    Vofa_Send(20, 100, &Node_Debug, 0x1024);
+    Vofa_Send(500, 100, &Node_Debug, 0x1024); // 500Hz 与云台同频 (约 16KB/s; USB 串口实测上限约 30KB/s, 1kHz 会丢帧)
 
     // 初始化事件组
     InitEventGroup = xEventGroupCreate();

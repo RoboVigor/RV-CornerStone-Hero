@@ -53,6 +53,10 @@ static void GyroscopeBiasEstimator_UpdateBias(GyroscopeBiasEstimator *est, const
     float gyro_len = Vector3d_length(gyro);
     if (gyro_len < GYRO_FOR_BIAS_THRESHOLD)
     {
+        // 零偏低通只在静止时更新, 距上次更新可能已过去数十秒; 若直接用该时间差, alpha≈1, 单个样本就会整体替换零偏估计
+        // 这里把时间差限制在 GYRO_BIAS_MAX_DT_NS 内, 保证零偏始终按 GYRO_BIAS_LOWPASS_FREQ 平滑更新
+        if (est->gyroBiasLowPass.numSamples > 0 && (uint64_t) timestampNs - est->gyroBiasLowPass.lastTimestampNs > GYRO_BIAS_MAX_DT_NS)
+            est->gyroBiasLowPass.lastTimestampNs = (uint64_t) timestampNs - GYRO_BIAS_MAX_DT_NS;
         float updateWeight = FMAX(0.0f, 1.0f - gyro_len / GYRO_FOR_BIAS_THRESHOLD);
         updateWeight *= updateWeight;
         Vector3d filteredGyro = est->gyroLowPass.filteredData;
@@ -102,7 +106,8 @@ void GyroscopeBiasEstimator_ProcessGyroscope(GyroscopeBiasEstimator *est, const 
 {
     lowPassFilter_addSample(&est->gyroLowPass, gyro, timestampNs);
     Vector3d_sub(gyro, &est->gyroLowPass.filteredData, &est->smoothedGyroDiff);
-    uint8_t gyroStatic = Vector3d_length(&est->smoothedGyroDiff) < GYRO_DIFF_STATIC_THRESHOLD ? 1 : 0;
+    // 静止判定额外要求角速度本身足够小: 仅靠"平滑"会把手动/云台的匀速慢转判为静止, 并在减速末段把运动学成零偏
+    uint8_t gyroStatic = (Vector3d_length(&est->smoothedGyroDiff) < GYRO_DIFF_STATIC_THRESHOLD && Vector3d_length(gyro) < GYRO_FOR_BIAS_THRESHOLD) ? 1 : 0;
     IsStaticCounter_AppendFrame(&est->isGyroStatic, gyroStatic);
 
     if (IsStaticCounter_IsRecentlyStatic(&est->isGyroStatic) && IsStaticCounter_IsRecentlyStatic(&est->isAccelStatic))

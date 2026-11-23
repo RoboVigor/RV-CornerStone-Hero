@@ -14,15 +14,37 @@
 void IIC_Delay(unsigned int t) {
     int i;
     for (i = 0; i < t; i++) {
-        int a = 100; // 6
+        int a = 6;
         while (a--)
             ;
     }
 }
 
+void IIC_SDA_In(void);
+void IIC_Stop(void);
+
+/**
+ * @brief I2C 总线恢复
+ * @note  MPU6500 在 MCU 复位(烧录/复位键/看门狗)时不断电; 若复位发生在读取中途, 传感器停在某个字节中间并一直拉低 SDA,
+ *        之后每次 IIC_Start 都失败, MPU6500_Initialize 无限重试, IMU 永远不启动.
+ *        标准做法: 释放 SDA, 打最多 9 个 SCL 时钟直到传感器放开 SDA, 再发 STOP.
+ */
+static void IIC_Bus_Recover(void) {
+    int i;
+    IIC_SDA_In();
+    for (i = 0; i < 9 && !IIC_SDA_Read(); i++) {
+        IIC_SCL_L();
+        IIC_Delay(2);
+        IIC_SCL_H();
+        IIC_Delay(2);
+    }
+    IIC_Stop();
+}
+
 void IIC_GPIO_Init(void) {
     PFout(6) = 1;
     PFout(8) = 0;
+    IIC_Bus_Recover();
 }
 
 void IIC_SDA_Out(void) {

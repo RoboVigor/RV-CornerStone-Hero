@@ -38,6 +38,25 @@ void Can_Send(CAN_TypeDef *CANx, int16_t id, int16_t i_201, int16_t i_202, int16
     }
 }
 
+uint8_t Can_Send_NoWait(CAN_TypeDef *CANx, int16_t id, int16_t i_1, int16_t i_2, int16_t i_3, int16_t i_4) {
+    CanTxMsg CanTxData;
+
+    CanTxData.StdId   = id;
+    CanTxData.IDE     = CAN_Id_Standard;
+    CanTxData.RTR     = CAN_RTR_Data;
+    CanTxData.DLC     = 0x08;
+    CanTxData.Data[0] = (uint8_t) (i_1 >> 8);
+    CanTxData.Data[1] = (uint8_t) i_1;
+    CanTxData.Data[2] = (uint8_t) (i_2 >> 8);
+    CanTxData.Data[3] = (uint8_t) i_2;
+    CanTxData.Data[4] = (uint8_t) (i_3 >> 8);
+    CanTxData.Data[5] = (uint8_t) i_3;
+    CanTxData.Data[6] = (uint8_t) (i_4 >> 8);
+    CanTxData.Data[7] = (uint8_t) i_4;
+
+    return CAN_Transmit(CANx, &CanTxData);
+}
+
 void Can_Send_Msg(CAN_TypeDef *CANx, int16_t id, uint8_t *sendBuf, uint16_t length) {
     int data[4];
     int i;

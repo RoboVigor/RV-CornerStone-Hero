@@ -25,6 +25,12 @@
 void Can_Send(CAN_TypeDef *CANx, int16_t stdId, int16_t i_201, int16_t i_202, int16_t i_203, int16_t i_204);
 
 /**
+ * @brief 发送一帧, 不等待发送完成 (Can_Send 会忙等直到发送成功, 总线异常时会卡死调用任务)
+ * @return 邮箱号, 无空邮箱时返回 CAN_TxStatus_NoMailBox (该帧被丢弃)
+ */
+uint8_t Can_Send_NoWait(CAN_TypeDef *CANx, int16_t stdId, int16_t i_1, int16_t i_2, int16_t i_3, int16_t i_4);
+
+/**
  * @brief CAN打包并发送
  *
  * @param CANx  指定一个CAN口,CAN1或CAN2

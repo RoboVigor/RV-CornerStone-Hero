@@ -22,6 +22,11 @@
 #define GIMBAL_PITCH_MAX 14
 #define CHASSIS_ROTOR_SPEED 550
 
+// IMU 采样率 (阶段2: 200 -> 500Hz). 改这里时同步改 GYROSCOPE_FREQ, 并按比例调整 library/ekf/gyro_bias_estimator.h 的帧数常量
+#define IMU_SAMPLE_RATE_HZ 500
+#undef GYROSCOPE_FREQ
+#define GYROSCOPE_FREQ 0x01 // SMPLRT_DIV: 1kHz / (1 + 1) = 500Hz
+
 // 底盘配置
 #define CHASSIS_MOTOR_REDUCTION_RATE 19.2f   // 底盘电机减速比
 #define CHASSIS_SIZE_K 0.385f                // 测量值, 机器人中心点到XY边缘的距离之和

@@ -27,8 +27,8 @@ int MPU6500_Init(void) {
     {
         return 0xff;
     }
-    if (IIC_WriteData(MPU_IIC_ADDR, MPU6500_CONFIG, 0x03) == 0xff) // Digital Low-Pass Filter:DLPF_CFG is 3, Fs is 1khz
-    {                                                              // acc bandwidth 44Hz,gyro 42Hz
+    if (IIC_WriteData(MPU_IIC_ADDR, MPU6500_CONFIG, 0x02) == 0xff) // DLPF_CFG 2: gyro 92Hz, 延迟 3.9ms, Fs 1kHz (原 0x03: 41Hz, 延迟 5.9ms)
+    {                                                              // 加速度计带宽由 ACCEL_CONFIG_2 单独设置, 不受影响
         return 0xff;
     }
     if (IIC_WriteData(MPU_IIC_ADDR, MPU6500_GYRO_CONFIG, 0x18) == 0xff) // FS_SEL 3 : gyroscope full scale range is +-2000degs/s

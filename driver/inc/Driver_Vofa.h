@@ -14,6 +14,7 @@
 #define vofaTail_t 0x7F800000
 /* @note 注意此协议数据为十六进制float，debug赋值时记得强转为float
 */
+extern VofaData_type VofaShadow; // VofaData 指向它, 由 Task_Vofa_Send 整帧拷贝后发送
 void Vofa_Send(uint16_t frequency, uint16_t heapDeth, Node_Type * node, uint32_t commandID);
 void Task_Vofa_Send(void * Parameters);
 #endif 
