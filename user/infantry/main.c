@@ -6,6 +6,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "tasks.h"
+#include "params.h"
+#include "cmd.h"
 
 int main(void) {
 
@@ -66,6 +68,12 @@ int main(void) {
     // Servo
     BSP_PWM_Set_Port(&PWM_Magazine_Servo, PWM_PH10);
     BSP_PWM_Init(&PWM_Magazine_Servo, 9000, 200, TIM_OCPolarity_Low);
+
+    // 运行期参数 (pitch 控制器): 编译期默认值, flash 中有有效记录时覆盖
+    if (Params_Init() == PARAMS_SRC_FLASH)
+        Vofa_Print("params loaded from flash ('get' to list, 'defaults' to reset)\r\n");
+    else
+        Vofa_Print("params: compiled defaults\r\n");
 
     // Calibration
     Motor_Set_Angle_Bias(&Motor_Yaw, 190.239258);
@@ -128,6 +136,9 @@ int main(void) {
 
     // DMA发送任务
     xTaskCreate(Task_Host, "Task_Host", 500, NULL, 4, NULL);
+
+    // 串口命令 (VOFA): 最低优先级, flash 擦写时阻塞的只是它自己
+    xTaskCreate(Task_Cmd, "Task_Cmd", 600, NULL, 2, NULL);
 
     // IMU任务
     xTaskCreate(Task_Imu, "Task_Imu", 400, NULL, 7, NULL); // 最高优先级: 避免被同优先级任务时间片打断

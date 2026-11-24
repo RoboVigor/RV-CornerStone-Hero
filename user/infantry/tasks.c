@@ -4,6 +4,7 @@
 #include "macro.h"
 #include "handle.h"
 #include "math.h"
+#include "params.h"
 
 int qian = 0, zuo = 0;
 
@@ -189,29 +190,184 @@ static uint8_t Recorder_Update(const float sample[REC_CH], uint8_t trigger) {
  *   ω_cmd = Kθ·(θ_ref-θ) + ω_ff
  *   u     = Kp·(ω_cmd-ω) + 积分(抗饱和/可分离) + L(θ) + Fc·tanh(ω_cmd/ε)
  *******************************************************************************/
-#define PITCH_K_ANGLE    40.0f    // 角度环 (dps/deg)
-#define PITCH_KP_SPEED   220.0f   // 速度环 P (电流单位/dps)
-#define PITCH_KI_SPEED   3.0f    // 速度环 I (电流单位/dps/每帧)
-#define PITCH_I_MAX      4500.0f // 积分限幅: 需覆盖静摩擦超出前馈的部分
+// 以下增益/前馈已改为运行期参数 PitchParams (params.c, 可由串口 get/set/save 调整并存 flash):
+//   kAngle 40   角度环 (dps/deg)
+//   kpSpeed 220 速度环 P (电流单位/dps)
+//   kiSpeed 3   速度环 I (电流单位/dps/每帧)
+//   iMax 4500   积分限幅: 需覆盖静摩擦超出前馈的部分
+//   fc 3700     库仑摩擦前馈: 实测 Fc=5340±250 (2026-11 机械调整后, 4dps 往返扫描), 取 70% 防止过补偿引起极限环
+//   fcEps 8     dps, tanh 平滑宽度
+//   aBrake 3000 角度环开方制动曲线的减速度 (dps²): 大误差时限制 ω_cmd, 保证能及时刹住不超调 (实测可达 3200~5200)
 #define PITCH_I_SEP_DEG  1000.0f // 积分分离阈值 (摩擦主导系统: 静止时只能靠积分破开静摩擦, 故不分离)
 #define PITCH_I_LEAK_DPS 10.0f   // 运动中 (|ω| 超过该值) 积分按 PITCH_I_LEAK 衰减: 运动摩擦由前馈承担, 防止破开静摩擦后积分残留导致过冲
 #define PITCH_I_LEAK     0.98f   // 每帧乘数, 500Hz 下 τ≈100ms
 #define PITCH_OUT_LIM    16000.0f // 电流指令限幅 (16384 = 3A)
-#define PITCH_FC         3700.0f // 库仑摩擦前馈: 实测 Fc=5340±250 (2026-11 机械调整后, 4dps 往返扫描), 取 70% 防止过补偿引起极限环
-#define PITCH_FC_EPS     8.0f    // dps, tanh 平滑宽度
-#define PITCH_A_BRAKE    3000.0f // 角度环开方制动曲线的减速度 (dps²): 大误差时限制 ω_cmd, 保证能及时刹住不超调 (实测可达 3200~5200)
 #define PITCH_TARGET_MIN -30.0f
 #define PITCH_TARGET_MAX 3.0f
-#define PITCH_SAFE_MIN   -31.0f // 越界锁存清零 (下限 +6: 下机械限位在 +3.7, 否则靠在限位上时抬不起来)
-#define PITCH_SAFE_MAX   6.0f
-#define PITCH_TEMP_MAX   70     // 电机温度保护 (°C), 超过锁存清零
 
-// 负载前馈 L(θ) = C + D·θ (电流单位): 2026-11 机械调整后实测 4dps 往返扫描 [-26°,-1°] 两方向平均, 残差 sd 249
-// 云台未配平 (断电会落回 +3.7° 下限位), 负载随抬起角度线性增大; 改动机械/配重后需重新辨识 (PITCH_TEST_MODE 2)
-#define PITCH_LOAD_C -815.0f
-#define PITCH_LOAD_D 185.7f // 每度
-static float PitchLoadFeedforward(float pitchDeg) {
-    return PITCH_LOAD_C + PITCH_LOAD_D * pitchDeg;
+// 负载前馈 L(θ) = loadC + loadD·θ (电流单位): 2026-11 机械调整后实测 4dps 往返扫描 [-26°,-1°] 两方向平均, 残差 sd 249
+// 默认 loadC -815, loadD 185.7/度 (PitchParams)
+// 云台未配平 (断电会落回 +3.7° 下限位), 负载随抬起角度线性增大; 改动机械/配重后需重新辨识 (串口命令 cal pitch)
+static float PitchLoadFeedforward(const PitchParams_Type *pp, float pitchDeg) {
+    return pp->loadC + pp->loadD * pitchDeg;
+}
+
+/*******************************************************************************
+ * Pitch 前馈在线标定 (cal pitch)
+ * 匀速 (加速度≈0) 时电机电流只用于平衡重力负载和摩擦:
+ *   u = C + D·θ + Fc·s,  s = sign(ω)
+ * u 取总电流指令 (P + 积分 + 前馈), 积分会吸收前馈的偏差, 所以 u 即真实负载, 与当前前馈参数无关.
+ * 对 φ = [1, θ, s] 累加正规方程 ΣφφT·β = Σφu, 结束时用 Cramer 法则解 β = [C, D, Fc]
+ * (等价于: Fc = 同角度上下行电流差的一半, L(θ) = 上下行平均值的直线拟合)
+ * 只取 θ∈[PCAL_FIT_MIN, PCAL_FIT_MAX] 且实际速度接近扫描速度的样本 (排除端点换向的加减速段)
+ *******************************************************************************/
+#define PCAL_START       2.0f   // 扫描起点 (deg)
+#define PCAL_END         -24.0f // 扫描终点 (deg)
+#define PCAL_SPEED       4.0f   // 扫描速度 (dps)
+#define PCAL_LOOPS       2      // 往返次数
+#define PCAL_FIT_MIN     -22.0f
+#define PCAL_FIT_MAX     -1.0f
+#define PCAL_SPEED_GATE  2.0f   // |ω - s·v| 小于此值 (dps) 才采样
+#define PCAL_SETTLE_DEG  0.5f   // 准备阶段: 到达起点的判定误差
+#define PCAL_SETTLE_S    1.0f   // 准备阶段: 到达后保持时间
+#define PCAL_PREP_TIMEOUT_S 5.0f
+
+PitchCal_Type PitchCal;
+
+static double   pcalM[3][3], pcalB[3], pcalYY; // 正规方程累加量 (双精度: 约 1.2 万个 1e4 量级样本的平方和)
+static uint32_t pcalTick;
+static float    pcalSettle;
+static float    pcalDir; // 当前扫描方向 s
+
+static double Det3(double m[3][3]) {
+    return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+           m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+}
+
+static void PitchCal_Solve(void) {
+    double   det = Det3(pcalM), beta[3], mk[3][3], sse;
+    uint32_t n   = PitchCal.nPos + PitchCal.nNeg;
+    int      i, j, k;
+    if (n < 10 || det == 0) {
+        PitchCal.abortReason = PCAL_ABORT_SINGULAR;
+        PitchCal.state       = PCAL_ABORTED;
+        return;
+    }
+    for (k = 0; k < 3; k++) {
+        for (i = 0; i < 3; i++)
+            for (j = 0; j < 3; j++) mk[i][j] = (j == k) ? pcalB[i] : pcalM[i][j];
+        beta[k] = Det3(mk) / det;
+    }
+    // SSE = Σu² - βᵀ·Σφu (正规方程成立时)
+    sse         = pcalYY - (beta[0] * pcalB[0] + beta[1] * pcalB[1] + beta[2] * pcalB[2]);
+    PitchCal.C  = (float) beta[0];
+    PitchCal.D  = (float) beta[1];
+    PitchCal.Fc = (float) beta[2];
+    PitchCal.sd = (float) sqrt(sse > 0 ? sse / (n - 3) : 0);
+    PitchCal.state = PCAL_DONE;
+}
+
+/**
+ * @brief 标定状态机: 处理开始/停止请求, 生成 pitch 目标
+ * @return 1: 标定进行中, *target 已被覆盖
+ */
+static uint8_t PitchCal_Target(uint8_t pitchInit, float pitchAngle, float interval, float *target) {
+    uint8_t req = PitchCal.request;
+    int     i, j;
+    if (req) {
+        PitchCal.request = 0;
+        if (req == 2) {
+            if (PitchCal.state == PCAL_PREP || PitchCal.state == PCAL_SWEEP) {
+                PitchCal.abortReason = PCAL_ABORT_STOP;
+                PitchCal.state       = PCAL_ABORTED;
+            }
+        } else if (req == 1 && PitchCal.state != PCAL_PREP && PitchCal.state != PCAL_SWEEP) {
+            if (!pitchInit) {
+                PitchCal.abortReason = PCAL_ABORT_NOT_READY;
+                PitchCal.state       = PCAL_ABORTED;
+            } else {
+                for (i = 0; i < 3; i++) {
+                    pcalB[i] = 0;
+                    for (j = 0; j < 3; j++) pcalM[i][j] = 0;
+                }
+                pcalYY               = 0;
+                PitchCal.nPos         = 0;
+                PitchCal.nNeg       = 0;
+                PitchCal.elapsed     = 0;
+                PitchCal.duration    = PCAL_LOOPS * 2 * (PCAL_START - PCAL_END) / PCAL_SPEED;
+                PitchCal.abortReason = PCAL_ABORT_NONE;
+                pcalTick             = 0;
+                pcalSettle           = 0;
+                PitchCal.state       = PCAL_PREP;
+            }
+        }
+    }
+
+    if (PitchCal.state == PCAL_PREP) {
+        *target = PCAL_START;
+        pcalTick++;
+        pcalSettle = (ABS(pitchAngle - PCAL_START) < PCAL_SETTLE_DEG) ? pcalSettle + interval : 0;
+        if (pcalSettle >= PCAL_SETTLE_S) {
+            pcalTick       = 0;
+            PitchCal.state = PCAL_SWEEP;
+        } else if (pcalTick * interval > PCAL_PREP_TIMEOUT_S) {
+            PitchCal.abortReason = PCAL_ABORT_PREP_TIMEOUT;
+            PitchCal.state       = PCAL_ABORTED;
+        }
+        return 1;
+    }
+    if (PitchCal.state == PCAL_SWEEP) {
+        float t      = pcalTick++ * interval;
+        float period = 2 * (PCAL_START - PCAL_END) / PCAL_SPEED;
+        PitchCal.elapsed = t;
+        if (t >= PitchCal.duration) {
+            *target = PCAL_START;
+            PitchCal_Solve();
+            return 1;
+        }
+        float tc = fmodf(t, period);
+        if (tc < period / 2) {
+            pcalDir = -1; // START -> END (角度减小)
+            *target = PCAL_START - PCAL_SPEED * tc;
+        } else {
+            pcalDir = 1;
+            *target = PCAL_END + PCAL_SPEED * (tc - period / 2);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * @brief 标定采样, 在电流指令计算完成后调用
+ * @param outputOn  本帧 pitch 是否有输出 (安全模式/掉线时为 0, 标定中止)
+ * @param u         总电流指令 (限幅后)
+ * @param saturated 本帧是否限幅 (限幅样本不代表真实负载, 丢弃)
+ */
+static void PitchCal_Sample(uint8_t outputOn, float pitchAngle, float pitchSpeed, float u, uint8_t saturated) {
+    double phi[3];
+    int    i, j;
+    if (PitchCal.state != PCAL_PREP && PitchCal.state != PCAL_SWEEP) return;
+    if (!outputOn) {
+        PitchCal.abortReason = PCAL_ABORT_OUTPUT_OFF;
+        PitchCal.state       = PCAL_ABORTED;
+        return;
+    }
+    if (PitchCal.state != PCAL_SWEEP || saturated) return;
+    if (pitchAngle < PCAL_FIT_MIN || pitchAngle > PCAL_FIT_MAX) return;
+    if (ABS(pitchSpeed - pcalDir * PCAL_SPEED) > PCAL_SPEED_GATE) return;
+    phi[0] = 1;
+    phi[1] = pitchAngle;
+    phi[2] = pcalDir;
+    for (i = 0; i < 3; i++) {
+        pcalB[i] += phi[i] * u;
+        for (j = 0; j < 3; j++) pcalM[i][j] += phi[i] * phi[j];
+    }
+    pcalYY += (double) u * u;
+    if (pcalDir > 0)
+        PitchCal.nPos++;
+    else
+        PitchCal.nNeg++;
 }
 
 /**
@@ -342,6 +498,10 @@ void Task_Gimbal(void *Parameters) {
             }
         }
 #endif
+        // 串口命令触发的前馈标定: 覆盖 pitch 目标 (优先级高于遥控/阶跃测试)
+        if (PitchCal_Target(pitchInit, Gyroscope_EulerData.pitch, interval, &pitchAngleTarget)) {
+            pitchAngleTargetControl = 0;
+        }
         yawAngleTarget += yawAngleTargetControl;
         pitchAngleTarget += pitchAngleTargetControl;
         // VofaData->debug5 = pitchAngleTarget;
@@ -409,29 +569,30 @@ void Task_Gimbal(void *Parameters) {
             PID_Calculate(&PID_Cloud_MotorYawSpeed, -1 * ChassisData.realvw, motorYawSpeed);
         }
         // ---- pitch 电流环控制器 ----
+        PitchParams_Type pp            = *(const PitchParams_Type *) &PitchParams; // 每帧快照, 防止串口 set 在一帧中途改参数
         static float   pitchIntegral = 0;
-        static uint8_t pitchTripped  = 0; // 安全锁存, 需复位恢复
         MIAO(pitchAngleTarget, PITCH_TARGET_MIN, PITCH_TARGET_MAX);
-        if (pitchAngle < PITCH_SAFE_MIN || pitchAngle > PITCH_SAFE_MAX || Motor_Pitch.temperature > PITCH_TEMP_MAX) pitchTripped = 1;
         float pitchAngleErr = pitchAngleTarget - pitchAngle;
         // 角度环: 小误差线性 Kθ·e; 大误差按开方制动曲线 √(2·A·|e|) 限速 (交点 |e| = 2A/Kθ²)
-        float pitchOmegaFb  = PITCH_K_ANGLE * pitchAngleErr;
-        float pitchOmegaLim = sqrtf(2.0f * PITCH_A_BRAKE * ABS(pitchAngleErr));
+        float pitchOmegaFb  = pp.kAngle * pitchAngleErr;
+        float pitchOmegaLim = sqrtf(2.0f * pp.aBrake * ABS(pitchAngleErr));
         MIAO(pitchOmegaFb, -pitchOmegaLim, pitchOmegaLim);
         float pitchOmegaCmd = pitchOmegaFb + pitchSpeedFeedforward; // 目标速度前馈: 摇杆/自瞄
         float pitchSpeedErr = pitchOmegaCmd - pitchSpeed;
-        float pitchFF       = PitchLoadFeedforward(pitchAngle) + PITCH_FC * tanhf(pitchOmegaCmd / PITCH_FC_EPS);
-        float pitchU0       = PITCH_KP_SPEED * pitchSpeedErr + pitchFF;
-        uint8_t pitchOutputOn = !pitchTripped && !SafetyMode && Motor_Pitch.online && !pitchRelease;
+        float pitchFF       = PitchLoadFeedforward(&pp, pitchAngle) + pp.fc * tanhf(pitchOmegaCmd / pp.fcEps);
+        float pitchU0       = pp.kpSpeed * pitchSpeedErr + pitchFF;
+        uint8_t pitchOutputOn = !SafetyMode && Motor_Pitch.online && !pitchRelease;
         if (pitchOutputOn) {
-            float inc  = ABS(pitchAngleErr) < PITCH_I_SEP_DEG ? PITCH_KI_SPEED * pitchSpeedErr : 0;
+            float inc  = ABS(pitchAngleErr) < PITCH_I_SEP_DEG ? pp.kiSpeed * pitchSpeedErr : 0;
             float uTry = pitchU0 + pitchIntegral + inc;
             if (!((uTry > PITCH_OUT_LIM && inc > 0) || (uTry < -PITCH_OUT_LIM && inc < 0))) pitchIntegral += inc; // 抗饱和
             if (ABS(pitchSpeed) > PITCH_I_LEAK_DPS) pitchIntegral *= PITCH_I_LEAK;
-            MIAO(pitchIntegral, -PITCH_I_MAX, PITCH_I_MAX);
+            MIAO(pitchIntegral, -pp.iMax, pp.iMax);
         }
         float pitchU = pitchU0 + pitchIntegral;
+        uint8_t pitchSaturated = ABS(pitchU) >= PITCH_OUT_LIM;
         MIAO(pitchU, -PITCH_OUT_LIM, PITCH_OUT_LIM);
+        PitchCal_Sample(pitchOutputOn, pitchAngle, pitchSpeed, pitchU, pitchSaturated);
 
         // 输出电流
         if (SwingMode) {
@@ -474,13 +635,13 @@ void Task_Gimbal(void *Parameters) {
             VofaData->debug4 = Gyroscope_EulerData.roll;
             VofaData->debug5 = ProbeImuPeriod.out;
 #else
-            // 流式(500Hz, 每帧): 0 目标角 1 实际角 2 陀螺速度(dps) 3 电流指令 4 积分项 5 电机温度(°C, 锁存时 +1000)
+            // 流式(500Hz, 每帧): 0 目标角 1 实际角 2 陀螺速度(dps) 3 电流指令 4 积分项 5 电机温度(°C)
             VofaData->debug0 = pitchAngleTarget;
             VofaData->debug1 = pitchAngle;
             VofaData->debug2 = pitchSpeed;
             VofaData->debug3 = pitchOut;
             VofaData->debug4 = pitchIntegral;
-            VofaData->debug5 = Motor_Pitch.temperature + (pitchTripped ? 1000 : 0);
+            VofaData->debug5 = Motor_Pitch.temperature;
 #endif
             VofaData->debug6 = (float) loopCount; // 帧号: 去重/检测丢帧 (录波输出时为相对触发时刻的 us)
             taskEXIT_CRITICAL();

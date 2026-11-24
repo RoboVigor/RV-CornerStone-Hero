@@ -3,6 +3,7 @@
  */
 
 #include "handle.h"
+#include "cmd.h"
 
 extern uint32_t USBD_OTG_ISR_Handler(USB_OTG_CORE_HANDLE *pdev);
 
@@ -68,10 +69,11 @@ void USART3_IRQHandler(void) {
 }
 
 /**
- * @brief USART6 串口中断
- * @note  裁判系统读取
+ * @brief USART6 串口中断 (VOFA 调试口, 空闲中断)
+ * @note  先把本次收到的字节交给命令系统 (Bridge 处理后会重启 DMA 覆盖缓冲区), 再走原协议解包
  */
 void USART6_IRQHandler(void) {
+    Cmd_Rx_Bytes(Node_Debug.receiveBuf, Protocol_Buffer_Length - DMA_Get_Data_Counter(USART6_Rx));
     Bridge_Receive_USART(&BridgeData, USART_BRIDGE, 6);
 }
 
