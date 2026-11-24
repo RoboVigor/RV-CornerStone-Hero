@@ -13,10 +13,12 @@ Deeper onboarding material already exists — read it rather than re-deriving:
 
 ## Build / flash / test
 
-- Build system is **Keil MDK only**: `mdk/infantry.uvprojx`, single target `Target 1`, ARM Compiler 5.06 (ARMCC, `__CC_ARM`). There is no Makefile/CMake and no host-side build; builds happen on Windows in µVision or via the VS Code "Keil Assistant" extension (`mdk/.vscode/`). It cannot be compiled from this macOS checkout — say so instead of claiming a build passed.
-- Command-line equivalent (Windows): `UV4 -b mdk\infantry.uvprojx -t "Target 1" -o build.log`; flash with `UV4 -f ...` (J-Link, see `mdk/JLinkSettings.ini`).
-- Project-wide defines live in the uvprojx `<Define>`: `STM32F427_437xx, USE_STDPERIPH_DRIVER, ROBOT_LOOP_ONE, ARM_MATH_CM4, USE_USB_OTG_FS`.
-- **New `.c` files must be added to a group in `mdk/infantry.uvprojx`** (groups: core, library, driver, user_common, user_loop_infantry, device); new include dirs go in its `<IncludePath>`. Dropping a file in a directory does nothing.
+- Two builds share one file list, `mdk/infantry.uvprojx` (CMake parses the C sources and include paths from it):
+  - **GCC/CMake (macOS/Linux):** `cmake --preset default` (-O0, `build/`) or `cmake --preset release` (-O2, `build-release/`), then `cmake --build build` (or `build-release`). Flash with `cmake --build build -t flash` (OpenOCD + CMSIS-DAP; flashes real hardware, so only when asked). Needs `arm-none-eabi-gcc`, Ninja, OpenOCD; details in `cmake/README.md`.
+  - **Keil MDK (Windows):** `Target 1`, ARM Compiler 5.06 (ARMCC, `__CC_ARM`). `UV4 -b mdk\infantry.uvprojx -t "Target 1" -o build.log`; flash with `UV4 -f ...` (J-Link, see `mdk/JLinkSettings.ini`). Also via the VS Code "Keil Assistant" extension (`mdk/.vscode/`). It cannot run on macOS.
+- A GCC pass says nothing about Keil: state which one was actually built. Code must compile with both. GCC-only pieces (startup, linker script, syscalls) live in `cmake/`; the FreeRTOS port is swapped from RVDS to GCC automatically.
+- Project-wide defines live in the uvprojx `<Define>` and are repeated in `CMakeLists.txt` (keep both in sync): `STM32F427_437xx, USE_STDPERIPH_DRIVER, ROBOT_LOOP_ONE, ARM_MATH_CM4, USE_USB_OTG_FS`.
+- **New `.c` files must be added to a group in `mdk/infantry.uvprojx`** (groups: core, library, driver, user_common, user_loop_infantry, device); new include dirs go in its `<IncludePath>`. Dropping a file in a directory does nothing. CMake picks up the change by itself (it re-configures when the uvprojx changes).
 - No unit tests. Verification is on hardware; runtime telemetry goes out via VOFA (`Vofa_Send(..., &Node_Debug, 0x1024)` on USART6, fields `debug1..N` set in `tasks.c`).
 - Formatting: `.clang-format` (LLVM base, 4-space indent, right-aligned `*`, aligned consecutive assignments/declarations, no include sorting).
 
